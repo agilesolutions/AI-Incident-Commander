@@ -1,0 +1,11 @@
+{
+  "type":"record","name":"RemediationFailed","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Reports a failed attempt to execute an approved remediation action.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},{"name":"proposalId","type":"string"},
+    {"name":"executionId","type":"string"},{"name":"failureCode","type":"string"},{"name":"failureSummary","type":"string"},
+    {"name":"retryable","type":"boolean"},{"name":"correlationId","type":"string"},
+    {"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

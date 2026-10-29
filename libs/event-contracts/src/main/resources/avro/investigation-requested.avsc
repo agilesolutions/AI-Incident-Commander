@@ -1,0 +1,11 @@
+{
+  "type":"record","name":"InvestigationRequested","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Requests an investigation; this does not authorize remediation.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},
+    {"name":"priority","type":"string"},{"name":"objective","type":"string"},
+    {"name":"evidenceEventIds","type":{"type":"array","items":"string"},"default":[]},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

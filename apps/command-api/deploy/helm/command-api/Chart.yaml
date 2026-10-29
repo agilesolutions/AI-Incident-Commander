@@ -1,0 +1,6 @@
+apiVersion: v2
+name: command-api
+description: REST façade for AI Incident Commander
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

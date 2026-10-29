@@ -1,0 +1,131 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.6'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.google.cloud.tools.jib' version '3.4.5'
+	id 'jacoco'
+}
+
+group = 'com.agilesolutions.signal'
+version = '1.0.0'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+ext {
+	commit = commit()
+	branchName = branchName()
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven { url = 'https://repo.spring.io/milestone' }
+	maven { url = 'https://repo.spring.io/snapshot' }
+	maven { url = uri("https://repo.embabel.com/artifactory/libs-snapshot") }
+	maven {url "https://packages.confluent.io/maven/"}
+}
+
+dependencies {
+
+	// Shared generated Avro events
+	implementation project(':common')
+
+	// Spring
+	implementation libs.spring.web
+	implementation libs.spring.data.validation
+	implementation libs.spring.kafka
+	implementation libs.avro
+	implementation libs.kafka.avro.serializer
+
+	// Database
+	implementation libs.spring.data.jdbc
+	implementation libs.spring.flyway
+	implementation libs.flyway.pg
+	implementation libs.postgresql.runtime
+
+	// Lombok
+	implementation libs.lombok
+	annotationProcessor libs.lombok
+
+	// Observability
+	implementation libs.otlp.appender
+	implementation libs.spring.otlp
+
+	// Tests
+	testImplementation libs.spring.otlp.test
+	testImplementation libs.spring.boot.test
+	testImplementation libs.spring.kafka.test
+}
+
+String commit() {
+	return 'git rev-parse HEAD'.execute().text.trim()
+}
+
+String branchName() {
+	return hasProperty('branch.name')
+			? property('branch.name')
+			: 'git branch --show-current'.execute().text.trim()
+}
+
+bootJar {
+	archiveFileName = './application.jar'
+
+	manifest {
+		attributes(
+				'Built-by': System.properties['user.name'],
+				'Build-Timestamp': java.time.Instant.now(),
+				'Build-Revision': commit,
+				'Build-Branch': branchName,
+				'Created-by': "Gradle ${gradle.gradleVersion}",
+				'Build-JDK': "${System.properties['java.version']} ${System.properties['java.vendor']} ${System.properties['java.vm.version']}",
+				'Build-OS': "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}"
+		)
+	}
+}
+
+test {
+	useJUnitPlatform()
+
+	testLogging {
+		events "passed", "skipped", "failed"
+	}
+}
+
+jib {
+	from {
+		image = "eclipse-temurin:25-jre"
+	}
+
+	to {
+		image = System.getenv('DOCKERHUB_REGISTRY') + "/signal-correlator:${version}"
+
+		auth {
+			username = System.getenv("DOCKERHUB_USERNAME") ?: ""
+			password = System.getenv("DOCKERHUB_PASSWORD") ?: ""
+		}
+	}
+
+	container {
+		ports = ['8080']
+
+		jvmFlags = [
+				'-Xms256m',
+				'-Xmx512m',
+				'-XX:+UseG1GC',
+				'-Djava.security.egd=file:/dev/./urandom'
+		]
+
+		mainClass = 'com.agilesolutions.audit.AuditApplication'
+
+		creationTime = 'USE_CURRENT_TIMESTAMP'
+		format = 'OCI'
+	}
+}
+
+if (file('gradle/jacoco.gradle').exists()) {
+	apply from: 'gradle/jacoco.gradle'
+}

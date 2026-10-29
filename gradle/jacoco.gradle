@@ -1,0 +1,84 @@
+// Optional standalone jacoco configuration to keep build.gradle tidy
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+// If running on very new JDKs where JaCoCo's runtime agent cannot instrument JDK classes,
+// disable the agent on the test tasks to avoid IllegalClassFormatException during test classloading.
+int _javaFeatureForJacoco = Runtime.version().feature()
+if (_javaFeatureForJacoco >= 25) {
+    logger.lifecycle("Disabling JaCoCo agent for Test tasks on Java ${_javaFeatureForJacoco} due to known incompatibility. Coverage verification will be skipped locally. Configure CI to use a supported JDK for coverage runs.")
+    tasks.withType(Test).configureEach {
+        // disable the jacoco extension for this test task
+        try {
+            jacoco.enabled = false
+        } catch (Exception e) {
+            logger.warn("Could not disable jacoco via extension on task ${name}: ${e.message}")
+        }
+    }
+}
+
+if (tasks.findByName('jacocoTestReport')) {
+    tasks.withType(Test).configureEach {
+        finalizedBy tasks.named('jacocoTestReport')
+    }
+}
+
+if (!tasks.findByName('jacocoTestReport')) {
+    tasks.register('jacocoTestReport', JacocoReport) {
+        dependsOn test
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
+        additionalSourceDirs.setFrom(files(sourceSets.main.allSource.srcDirs))
+        sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+        classDirectories.setFrom(files(sourceSets.main.output))
+        executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec", "**/*.exec"))
+    }
+}
+
+// Coverage verification: fail the build if coverage thresholds are not met
+int javaFeature = Runtime.version().feature()
+boolean jacocoSupportedOnThisJVM = javaFeature < 25
+
+if (!tasks.findByName('jacocoTestCoverageVerification')) {
+    tasks.register('jacocoTestCoverageVerification', JacocoCoverageVerification) {
+        dependsOn test
+        // Skip verification when running on very new JDKs where the JaCoCo agent may be incompatible
+        onlyIf { jacocoSupportedOnThisJVM }
+        doFirst {
+            if (!jacocoSupportedOnThisJVM) {
+                logger.lifecycle("Skipping jacocoTestCoverageVerification: JaCoCo may be incompatible with Java ${javaFeature}. Run coverage on a supported JDK in CI (e.g. Java 21) or upgrade JaCoCo.")
+            }
+        }
+        executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec", "**/*.exec"))
+        sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+        classDirectories.setFrom(files(sourceSets.main.output))
+
+        violationRules {
+            rule {
+                enabled = true
+                // Overall line coverage
+                limit {
+                    counter = 'LINE'
+                    value = 'COVERED_RATIO'
+                    minimum = 0.80
+                }
+                // Branch coverage
+                limit {
+                    counter = 'BRANCH'
+                    value = 'COVERED_RATIO'
+                    minimum = 0.70
+                }
+            }
+        }
+    }
+}
+
+// Make check depend on the coverage verification only when supported on this JVM
+if (tasks.findByName('jacocoTestCoverageVerification') && jacocoSupportedOnThisJVM) {
+    tasks.named('check') {
+        dependsOn tasks.named('jacocoTestCoverageVerification')
+    }
+}

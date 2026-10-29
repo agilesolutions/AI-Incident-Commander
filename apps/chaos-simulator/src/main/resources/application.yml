@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: chaos-simulator
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        auto.register.schemas: ${SCHEMA_REGISTRY_AUTO_REGISTER:true}
+        specific.avro.reader: false
+server:
+  port: ${SERVER_PORT:8080}
+
+simulator:
+  enabled: ${SIMULATOR_ENABLED:false}
+  interval-ms: ${SIMULATOR_INTERVAL_MS:30000}
+  source: ${SIMULATOR_SOURCE:chaos-simulator}
+  environment: ${SIMULATOR_ENVIRONMENT:demo}
+  topic: ${SIMULATOR_TOPIC:incident.telemetry.v1}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

@@ -1,0 +1,10 @@
+{
+  "type":"record","name":"RemediationRejected","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Explicit human rejection of a remediation proposal.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},{"name":"proposalId","type":"string"},
+    {"name":"rejectedBy","type":"string"},{"name":"reason","type":"string"},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

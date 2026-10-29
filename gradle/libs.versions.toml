@@ -1,0 +1,73 @@
+
+[versions]
+springBoot = "4.0.6"
+springDoc = "3.1.1"
+testContainers = "1.19.3"
+flyway = "11.14.1"
+postgresql = "42.6.0"
+h2 = "2.1.214"
+avro = "1.12.1"
+kafka-avro-serializer = "8.3.2"
+avro-gradle-plugin = "1.9.1"
+spring-ai = "2.0.1"
+embabel = "2.0.0-SNAPSHOT"
+
+[libraries]
+spring-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springBoot" }
+spring-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc", version.ref = "springBoot" }
+spring-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "springBoot" }
+spring-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "springBoot" }
+spring-data-jdbc = { module = "org.springframework.boot:spring-boot-starter-data-jdbc", version.ref = "springBoot" }
+spring-data-mongodb = { module = "org.springframework.boot:spring-boot-starter-data-mongodb", version.ref = "springBoot" }
+spring-data-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "springBoot" }
+spring-doc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springDoc" }
+spring-doc-api = { module = "org.springdoc:springdoc-openapi-starter-webmvc-api", version.ref = "springDoc" }
+oauth2-resource = { module = "org.springframework.boot:spring-boot-starter-oauth2-resource-server", version.ref = "springBoot" }
+oauth2-client = { module = "org.springframework.boot:spring-boot-starter-oauth2-client", version.ref = "springBoot" }
+lombok = { module = "org.projectlombok:lombok", version = "1.18.44" }
+
+spring-flyway = { module = "org.springframework.boot:spring-boot-starter-flyway", version.ref = "springBoot" }
+flyway-pg = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+postgresql-runtime = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+
+# Avro libraries for serialization and deserialization
+spring-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka", version.ref = "springBoot" }
+avro = { module = "org.apache.avro:avro", version.ref = "avro" }
+kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer", version.ref = "kafka-avro-serializer" }
+avro-gradle-plugin = { module = "com.github.davidmc24.gradle.plugin:gradle-avro-plugin", version.ref = "avro-gradle-plugin" }
+spring-kafka-test = { module = "org.springframework.kafka:spring-kafka-test", version.ref = "springBoot" }
+
+# Observability libs include OpenTelemetry API, Micrometer tracing bridge to OpenTelemetry, OTLP exporters for metrics and traces
+spring-otlp = { module = "org.springframework.boot:spring-boot-starter-opentelemetry", version.ref = "springBoot" }
+otlp-appender = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0", version = "2.21.0-alpha" }
+
+# Spring AI
+spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }
+spring-ai-starter-model-openai = { module = "org.springframework.ai:spring-ai-starter-model-openai" }
+spring-ai-starter-vector-store-qdrant = { module = "org.springframework.ai:spring-ai-starter-vector-store-qdrant" }
+spring-ai-starter-vector-store-advisor = { module = "org.springframework.ai:spring-ai-vector-store-advisor", version.ref = "spring-ai" }
+
+
+
+
+spring-otlp-test = { module = "org.springframework.boot:spring-boot-starter-opentelemetry-test", version.ref = "springBoot" }
+spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "springBoot" }
+spring-boot-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
+spring-web-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test", version.ref = "springBoot" }
+spring-jpa-test = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test", version.ref = "springBoot" }
+spring-restclient-test = { module = "org.springframework.boot:spring-boot-starter-restclient-test", version.ref = "springBoot" }
+spring-test-containers = { module = "org.springframework.boot:spring-boot-testcontainers", version.ref = "springBoot" }
+jupiter-test-containers = { module = "org.testcontainers:junit-jupiter", version.ref = "testContainers" }
+postgresql-test-containers = { module = "org.testcontainers:postgresql", version.ref = "testContainers" }
+keycloak-test-containers = { module = "com.github.dasniko:testcontainers-keycloak", version = "4.2.1" }
+
+# Embabel Agent Framework
+embabel-agent-starter = { module = "com.embabel.agent:embabel-agent-starter", version.ref = "embabel" }
+embabel-agent-test = { module = "com.embabel.agent:embabel-agent-test", version.ref = "embabel" }
+
+# Test and migration libraries
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+
+[plugins]
+avro = { id = "com.github.davidmc24.gradle.plugin.avro", version.ref = "avro-gradle-plugin" }

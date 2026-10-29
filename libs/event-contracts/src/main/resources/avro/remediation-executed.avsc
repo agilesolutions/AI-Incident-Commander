@@ -1,0 +1,13 @@
+{
+  "type":"record","name":"RemediationExecuted","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Reports an approved remediation attempt; execution is not proof the incident is resolved.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},{"name":"proposalId","type":"string"},
+    {"name":"approvalEventId","type":"string"},{"name":"executionId","type":"string"},
+    {"name":"actionType","type":"string"},{"name":"targetResourceId","type":"string"},
+    {"name":"outcome","type":{"type":"enum","name":"RemediationExecutionOutcome","symbols":["SUCCEEDED","PARTIAL","FAILED"]}},
+    {"name":"startedAt","type":"string"},{"name":"finishedAt","type":"string"},{"name":"resultSummary","type":"string"},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

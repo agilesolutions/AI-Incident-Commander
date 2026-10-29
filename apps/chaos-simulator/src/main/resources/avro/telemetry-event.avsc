@@ -1,0 +1,21 @@
+{
+  "type":"record","name":"TelemetryEvent","namespace":"com.agilesolutions.aiincidentcommander.contracts.v1",
+  "doc":"Infrastructure, application, or deployment signal.",
+  "fields":[
+    {"name":"eventId","type":"string"},
+    {"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string","doc":"UTC RFC 3339 timestamp."},
+    {"name":"source","type":"string"},
+    {"name":"environment","type":"string"},
+    {"name":"resourceId","type":"string"},
+    {"name":"resourceType","type":"string"},
+    {"name":"signalType","type":"string"},
+    {"name":"severity","type":{"type":"enum","name":"TelemetrySeverity","symbols":["INFO","WARN","ERROR","CRITICAL"]}},
+    {"name":"name","type":"string"},
+    {"name":"description","type":"string"},
+    {"name":"value","type":["null","double"],"default":null},
+    {"name":"unit","type":["null","string"],"default":null},
+    {"name":"labels","type":{"type":"map","values":"string"},"default":{}},
+    {"name":"correlationId","type":["null","string"],"default":null}
+  ]
+}

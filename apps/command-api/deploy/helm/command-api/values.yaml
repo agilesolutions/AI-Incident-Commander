@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: ai-incident-commander/command-api
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+incidentService:
+  baseUrl: http://incident-service:8081
+
+remediationService:
+  baseUrl: http://remediation-service:8082
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
