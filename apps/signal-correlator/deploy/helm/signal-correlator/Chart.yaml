@@ -1,0 +1,6 @@
+apiVersion: v2
+name: signal-correlator
+description: Deterministic Kafka telemetry correlation service for AI Incident Commander
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

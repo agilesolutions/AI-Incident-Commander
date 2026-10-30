@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "signal-correlator.fullname" . }}
+  labels:
+    app.kubernetes.io/name: signal-correlator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: signal-correlator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: signal-correlator
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: signal-correlator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.env.kafkaBootstrapServers | quote }}
+            - name: SCHEMA_REGISTRY_URL
+              value: {{ .Values.env.schemaRegistryUrl | quote }}
+            - name: CORRELATOR_INPUT_TOPIC
+              value: {{ .Values.env.inputTopic | quote }}
+            - name: CORRELATOR_OUTPUT_TOPIC
+              value: {{ .Values.env.outputTopic | quote }}
+            - name: CORRELATOR_THRESHOLD
+              value: {{ .Values.env.threshold | quote }}
+            - name: CORRELATOR_WINDOW_SECONDS
+              value: {{ .Values.env.windowSeconds | quote }}
+            - name: CORRELATOR_DEDUP_TTL_SECONDS
+              value: {{ .Values.env.deduplicationTtlSeconds | quote }}
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

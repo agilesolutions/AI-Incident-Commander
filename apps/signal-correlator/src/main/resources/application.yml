@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: signal-correlator
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    properties:
+      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:signal-correlator}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+correlator:
+  input-topic: ${CORRELATOR_INPUT_TOPIC:incident.telemetry.v1}
+  output-topic: ${CORRELATOR_OUTPUT_TOPIC:incident.detected.v1}
+  detector-id: ${CORRELATOR_DETECTOR_ID:signal-correlator-v1}
+  threshold: ${CORRELATOR_THRESHOLD:3}
+  window-seconds: ${CORRELATOR_WINDOW_SECONDS:120}
+  deduplication-ttl-seconds: ${CORRELATOR_DEDUP_TTL_SECONDS:900}
+  environment: ${CORRELATOR_ENVIRONMENT:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: Signal Correlator
+    description: Deterministic telemetry correlation and incident detection
+    version: 0.1.0-SNAPSHOT
