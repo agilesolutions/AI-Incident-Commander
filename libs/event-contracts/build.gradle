@@ -1,0 +1,44 @@
+import com.github.davidmc24.gradle.plugin.avro.GenerateAvroJavaTask
+
+plugins {
+  id 'java'
+  id 'io.spring.dependency-management' version '1.1.7'
+  alias libs.plugins.avro
+  id 'org.openapi.generator' version '7.25.0'
+}
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven { url = 'https://repo.spring.io/milestone' }
+  maven { url = 'https://repo.spring.io/snapshot' }
+  maven { url = uri("https://repo.embabel.com/artifactory/libs-snapshot") }
+}
+
+
+dependencies {
+  implementation libs.spring.data.validation
+  implementation libs.spring.kafka
+  implementation libs.spring.web
+  implementation libs.avro
+  implementation libs.spring.doc.api
+  implementation libs.spring.doc.ui
+  implementation libs.lombok
+  annotationProcessor libs.lombok
+}
+
+tasks.register("generateAvro", GenerateAvroJavaTask) {
+  source("src/main/resources/avro")
+  outputDir = file("src/main/java")
+}
+
+
+compileJava {
+  dependsOn tasks.generateAvro
+}

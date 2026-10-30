@@ -156,7 +156,7 @@ ai-incident-commander/
 
 ## Ontwikkelroadmap
 
-- [ ] Multi-project Gradle-build en basisconfiguratie voor Spring Boot.
+- [X] Multi-project Gradle-build en basisconfiguratie voor Spring Boot.
 - [ ] Eventcontracten en Kafka-topics definiëren.
 - [ ] Chaos Simulator implementeren.
 - [ ] Deterministische incidentdetectie bouwen.

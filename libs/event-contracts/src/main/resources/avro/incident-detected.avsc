@@ -1,0 +1,14 @@
+{
+  "type":"record","name":"IncidentDetected","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Published by deterministic signal correlation when a new incident is detected.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},
+    {"name":"title","type":"string"},{"name":"description","type":"string"},
+    {"name":"severity","type":{"type":"enum","name":"IncidentSeverity","symbols":["LOW","MEDIUM","HIGH","CRITICAL"]}},
+    {"name":"environment","type":"string"},{"name":"primaryResourceId","type":"string"},
+    {"name":"evidenceEventIds","type":{"type":"array","items":"string"},"default":[]},
+    {"name":"detectorId","type":"string"},{"name":"correlationId","type":"string"},
+    {"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

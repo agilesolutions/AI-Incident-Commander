@@ -1,0 +1,19 @@
+{
+  "module": "libs:event-contracts",
+  "format": "Apache Avro .avsc",
+  "namespace": "com.agilesolutions.commander.contracts.v1",
+  "schemas": [
+    "incident-detected.avsc",
+    "incident-updated.avsc",
+    "investigation-completed.avsc",
+    "investigation-requested.avsc",
+    "remediation-approval-requested.avsc",
+    "remediation-approved.avsc",
+    "remediation-executed.avsc",
+    "remediation-failed.avsc",
+    "remediation-proposed.avsc",
+    "remediation-rejected.avsc",
+    "remediation-verified.avsc",
+    "telemetry-event.avsc"
+  ]
+}

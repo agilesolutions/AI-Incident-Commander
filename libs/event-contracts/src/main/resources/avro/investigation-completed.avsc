@@ -1,0 +1,17 @@
+{
+  "type":"record","name":"InvestigationCompleted","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Investigation findings and evidence; contains no execution authorization.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},
+    {"name":"investigationId","type":"string"},
+    {"name":"status","type":{"type":"enum","name":"InvestigationStatus","symbols":["COMPLETED","INCONCLUSIVE","FAILED"]}},
+    {"name":"summary","type":"string"},{"name":"probableRootCause","type":["null","string"],"default":null},
+    {"name":"confidence","type":"double"},
+    {"name":"evidence","type":{"type":"array","items":{"type":"record","name":"EvidenceReference","fields":[
+      {"name":"evidenceId","type":"string"},{"name":"kind","type":"string"},{"name":"description","type":"string"},
+      {"name":"sourceEventId","type":["null","string"],"default":null}
+    ]}},"default":[]},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

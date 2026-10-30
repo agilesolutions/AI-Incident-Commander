@@ -1,0 +1,21 @@
+replicaCount: 1
+image:
+  repository: ghcr.io/agilesolutions/chaos-simulator
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+env:
+  kafkaBootstrapServers: "redpanda.messaging.svc.cluster.local:9092"
+  schemaRegistryUrl: "http://redpanda-console.messaging.svc.cluster.local:8080"
+  simulatorEnabled: "false"
+  simulatorIntervalMs: "30000"
+  simulatorEnvironment: "demo"

@@ -1,0 +1,11 @@
+{
+  "type":"record","name":"RemediationVerified","namespace":"com.agilesolutions.commander.contracts.v1",
+  "doc":"Post-action verification, separate from execution outcome.",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},{"name":"proposalId","type":"string"},
+    {"name":"executionId","type":"string"},{"name":"verified","type":"boolean"},
+    {"name":"verificationMethod","type":"string"},{"name":"evidenceSummary","type":"string"},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}
