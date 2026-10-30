@@ -1,0 +1,14 @@
+{
+  "type":"record","name":"InvestigationCompleted","namespace":"com.agilesolutions.aiincidentcommander.contracts.v1",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},
+    {"name":"status","type":"string"},{"name":"summary","type":"string"},
+    {"name":"probableRootCause","type":"string"},{"name":"confidence","type":"double"},
+    {"name":"supportingEvidence","type":{"type":"array","items":"string"},"default":[]},
+    {"name":"uncertainties","type":{"type":"array","items":"string"},"default":[]},
+    {"name":"recommendedActions","type":{"type":"array","items":"string"},"default":[]},
+    {"name":"severityAssessment","type":"string"},{"name":"humanReviewRequired","type":"boolean"},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}
