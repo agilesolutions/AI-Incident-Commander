@@ -1,0 +1,10 @@
+{
+  "type":"record","name":"IncidentUpdated","namespace":"com.agilesolutions.aiincidentcommander.contracts.v1",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},
+    {"name":"previousStatus","type":["null","string"],"default":null},
+    {"name":"status","type":"string"},{"name":"summary","type":"string"},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}

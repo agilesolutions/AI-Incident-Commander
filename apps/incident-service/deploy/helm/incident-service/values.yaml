@@ -1,0 +1,26 @@
+replicaCount: 1
+image:
+  repository: incident-service
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+resources:
+  requests:
+    cpu: 200m
+    memory: 384Mi
+  limits:
+    cpu: "1"
+    memory: 768Mi
+env:
+  datasourceUrl: jdbc:postgresql://postgresql:5432/incidentdb
+  datasourceUsername: incident
+  schemaRegistryUrl: http://schema-registry:8081
+  kafkaBootstrapServers: kafka:9092
+  detectedTopic: incident.detected.v1
+  updatedTopic: incident.updated.v1
+  investigationRequestedTopic: incident.investigation.requested.v1
+secret:
+  name: incident-service-secrets
+  datasourcePasswordKey: datasource-password

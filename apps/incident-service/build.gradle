@@ -37,6 +37,7 @@ dependencies {
 	// Spring
 	implementation libs.spring.web
 	implementation libs.spring.data.validation
+	implementation libs.spring.data.jpa
 	implementation libs.spring.kafka
 	implementation libs.avro
 	implementation libs.kafka.avro.serializer
@@ -59,6 +60,7 @@ dependencies {
 	testImplementation libs.spring.otlp.test
 	testImplementation libs.spring.boot.test
 	testImplementation libs.spring.kafka.test
+	testImplementation libs.spring.web.test
 }
 
 String commit() {

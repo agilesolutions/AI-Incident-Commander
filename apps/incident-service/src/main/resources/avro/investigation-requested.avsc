@@ -1,0 +1,10 @@
+{
+  "type":"record","name":"InvestigationRequested","namespace":"com.agilesolutions.aiincidentcommander.contracts.v1",
+  "fields":[
+    {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+    {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},
+    {"name":"priority","type":"string"},{"name":"objective","type":"string"},
+    {"name":"evidenceEventIds","type":{"type":"array","items":"string"},"default":[]},
+    {"name":"correlationId","type":"string"},{"name":"causationId","type":["null","string"],"default":null}
+  ]
+}
