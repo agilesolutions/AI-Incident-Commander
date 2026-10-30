@@ -1,0 +1,26 @@
+replicaCount: 1
+image:
+  repository: investigation-agent
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+resources:
+  requests:
+    cpu: 300m
+    memory: 768Mi
+  limits:
+    cpu: "2"
+    memory: 3Gi
+env:
+  kafkaBootstrapServers: kafka:9092
+  schemaRegistryUrl: http://schema-registry:8081
+  ollamaBaseUrl: http://ollama:11434
+  ollamaModel: qwen2.5:7b
+  datasourceUrl: jdbc:postgresql://postgresql:5432/investigationdb
+  datasourceUsername: investigation
+  engine: ollama
+secret:
+  name: investigation-agent-secrets
+  datasourcePasswordKey: datasource-password

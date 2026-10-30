@@ -157,12 +157,12 @@ ai-incident-commander/
 ## Ontwikkelroadmap
 
 - [X] Multi-project Gradle-build en basisconfiguratie voor Spring Boot.
-- [ ] Eventcontracten en Kafka-topics definiëren.
-- [ ] Chaos Simulator implementeren.
-- [ ] Deterministische incidentdetectie bouwen.
-- [ ] Incident lifecycle en persistente opslag implementeren.
-- [ ] AI-onderzoeker met Embabel integreren.
-- [ ] Lokale LLM-integratie via Ollama realiseren.
+- [ X] Eventcontracten en Kafka-topics definiëren.
+- [X] Chaos Simulator implementeren.
+- [X] Deterministische incidentdetectie bouwen.
+- [X] Incident lifecycle en persistente opslag implementeren.
+- [X] AI-onderzoeker met Embabel integreren.
+- [X] Lokale LLM-integratie via Ollama realiseren.
 - [ ] Optionele cloud-LLM-provider toevoegen.
 - [ ] Goedkeuringsproces en gecontroleerde herstelacties implementeren.
 - [ ] OpenTelemetry, Prometheus en Grafana integreren.

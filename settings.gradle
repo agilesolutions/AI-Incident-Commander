@@ -3,6 +3,7 @@ include 'apps:command-api'
 include 'apps:incident-service'
 include 'apps:signal-correlator'
 include 'apps:chaos-simulator'
+include 'apps:investigation-agent'
 include ':common'
 project(':common').projectDir = new File(settingsDir, 'apps/common')
 include 'libs:event-contracts'
