@@ -1,0 +1,6 @@
+apiVersion: v2
+name: remediation-service
+description: Human-approved, policy-controlled incident remediation
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

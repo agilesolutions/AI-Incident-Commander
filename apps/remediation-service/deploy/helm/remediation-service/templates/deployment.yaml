@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remediation-service
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels: { app: remediation-service }
+  template:
+    metadata:
+      labels: { app: remediation-service }
+    spec:
+      containers:
+        - name: remediation-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.env.datasourceUrl | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.env.datasourceUsername | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: {{ .Values.secret.datasourcePasswordKey }}
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.env.kafkaBootstrapServers | quote }}
+            - name: SCHEMA_REGISTRY_URL
+              value: {{ .Values.env.schemaRegistryUrl | quote }}
+            - name: REMEDIATION_EXECUTION_MODE
+              value: {{ .Values.env.executionMode | quote }}
+            - name: REMEDIATION_VERIFICATION_MODE
+              value: {{ .Values.env.verificationMode | quote }}
+            - name: REMEDIATION_ALLOWED_NAMESPACES
+              value: {{ .Values.env.allowedNamespaces | quote }}
+          ports:
+            - { name: http, containerPort: 8080 }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            initialDelaySeconds: 35
+            periodSeconds: 20
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

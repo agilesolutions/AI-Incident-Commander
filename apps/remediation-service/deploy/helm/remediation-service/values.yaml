@@ -1,0 +1,26 @@
+replicaCount: 1
+image:
+  repository: remediation-service
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+env:
+  kafkaBootstrapServers: kafka:9092
+  schemaRegistryUrl: http://schema-registry:8081
+  datasourceUrl: jdbc:postgresql://postgresql:5432/remediationdb
+  datasourceUsername: remediation
+  executionMode: simulation
+  verificationMode: manual
+  allowedNamespaces: default,demo
+secret:
+  name: remediation-service-secrets
+  datasourcePasswordKey: datasource-password
