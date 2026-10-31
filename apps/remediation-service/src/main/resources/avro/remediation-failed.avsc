@@ -1,0 +1,11 @@
+{
+ "type":"record","name":"RemediationFailed","namespace":"com.agilesolutions.aiincidentcommander.contracts.v1",
+ "fields":[
+  {"name":"eventId","type":"string"},{"name":"schemaVersion","type":"string","default":"1.0.0"},
+  {"name":"occurredAt","type":"string"},{"name":"incidentId","type":"string"},{"name":"proposalId","type":"string"},
+  {"name":"actionType","type":"string"},{"name":"resourceId","type":"string"},{"name":"approvalId","type":"string"},
+  {"name":"approvedBy","type":"string"},{"name":"approvedActionDigest","type":"string"},
+  {"name":"correlationId","type":["null","string"],"default":null},{"name":"causationId","type":["null","string"],"default":null},
+  {"name":"status","type":"string"},{"name":"message","type":"string"}
+ ]
+}

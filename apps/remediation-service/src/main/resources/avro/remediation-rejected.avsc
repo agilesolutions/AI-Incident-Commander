@@ -1,0 +1,5 @@
+{
+ "type":"record","name":"RemediationRejected","namespace":"com.agilesolutions.aiincidentcommander.contracts.v1",
+ "fields":[{"name":"eventId","type":"string"},{"name":"proposalId","type":"string"},{"name":"incidentId","type":"string"},
+ {"name":"rejectedBy","type":"string"},{"name":"reason","type":"string"},{"name":"occurredAt","type":"string"}]
+}
