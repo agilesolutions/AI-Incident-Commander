@@ -1,4 +1,7 @@
 replicaCount: 1
+namespace:
+  create: false
+  name: services
 image:
   repository: signal-correlator
   tag: "0.1.0"
@@ -14,10 +17,18 @@ resources:
     cpu: 500m
     memory: 512Mi
 env:
-  kafkaBootstrapServers: kafka.messaging.svc.cluster.local:9092
-  schemaRegistryUrl: http://schema-registry.messaging.svc.cluster.local:8081
+  kafkaBootstrapServers: "redpanda.messaging.svc.cluster.local:9092"
+  schemaRegistryUrl: "http://schema-registry.messaging.svc.cluster.local:8081"
   inputTopic: incident.telemetry.v1
   outputTopic: incident.detected.v1
   threshold: "3"
   windowSeconds: "120"
   deduplicationTtlSeconds: "900"
+
+config:
+  SPRING_PROFILES_ACTIVE: kubernetes
+  LOG_LEVEL: INFO
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-node-collector-collector.monitoring.svc.cluster.local:4318/v1/traces
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://tempo.monitoring.svc.cluster.local:4318
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-node-collector-collector.monitoring.svc.cluster.local:4318/v1/logs
+  OTEL_TRACES_SAMPLER_ARG: 1.0

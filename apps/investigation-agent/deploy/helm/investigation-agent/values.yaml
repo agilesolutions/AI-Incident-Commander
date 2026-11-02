@@ -1,4 +1,7 @@
 replicaCount: 1
+namespace:
+  create: false
+  name: services
 image:
   repository: investigation-agent
   tag: latest
@@ -14,13 +17,21 @@ resources:
     cpu: "2"
     memory: 3Gi
 env:
-  kafkaBootstrapServers: kafka:9092
-  schemaRegistryUrl: http://schema-registry:8081
-  ollamaBaseUrl: http://ollama:11434
-  ollamaModel: qwen2.5:7b
-  datasourceUrl: jdbc:postgresql://postgresql:5432/investigationdb
-  datasourceUsername: investigation
-  engine: ollama
+  kafkaBootstrapServers: "redpanda.messaging.svc.cluster.local:9092"
+  schemaRegistryUrl: "http://redpanda-console.messaging.svc.cluster.local:8080"
+  ollamaBaseUrl: "http://ollama:11434"
+  ollamaModel: "qwen2.5:7b"
+  datasourceUrl: "jdbc:postgresql://commander-postgresql.database.svc.cluster.local:5432/investigationdb"
+  datasourceUsername: "investigation"
+  engine: "ollama"
 secret:
   name: investigation-agent-secrets
   datasourcePasswordKey: datasource-password
+
+config:
+  SPRING_PROFILES_ACTIVE: kubernetes
+  LOG_LEVEL: INFO
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-node-collector-collector.monitoring.svc.cluster.local:4318/v1/traces
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://tempo.monitoring.svc.cluster.local:4318
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-node-collector-collector.monitoring.svc.cluster.local:4318/v1/logs
+  OTEL_TRACES_SAMPLER_ARG: 1.0

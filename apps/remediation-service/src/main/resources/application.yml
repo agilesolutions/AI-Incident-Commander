@@ -1,16 +1,16 @@
 spring:
   application: { name: remediation-service }
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/remediationdb}
-    username: ${SPRING_DATASOURCE_USERNAME:remediation}
-    password: ${SPRING_DATASOURCE_PASSWORD:remediation}
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/remediationdb}
+    username: ${DATASOURCE_USERNAME:remediation}
+    password: ${DATASOURCE_PASSWORD:remediation}
   jpa:
     hibernate: { ddl-auto: validate }
     open-in-view: false
     properties.hibernate.jdbc.time_zone: UTC
   flyway: { enabled: true }
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer.enable-auto-commit: false
     producer.acks: all
     producer.properties.enable.idempotence: true
