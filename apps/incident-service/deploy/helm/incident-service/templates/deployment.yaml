@@ -21,26 +21,9 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-          env:
-            - name: SPRING_DATASOURCE_URL
-              value: {{ .Values.env.datasourceUrl | quote }}
-            - name: SPRING_DATASOURCE_USERNAME
-              value: {{ .Values.env.datasourceUsername | quote }}
-            - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secret.name }}
-                  key: {{ .Values.secret.datasourcePasswordKey }}
-            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
-              value: {{ .Values.env.kafkaBootstrapServers | quote }}
-            - name: SCHEMA_REGISTRY_URL
-              value: {{ .Values.env.schemaRegistryUrl | quote }}
-            - name: INCIDENT_DETECTED_TOPIC
-              value: {{ .Values.env.detectedTopic | quote }}
-            - name: INCIDENT_UPDATED_TOPIC
-              value: {{ .Values.env.updatedTopic | quote }}
-            - name: INVESTIGATION_REQUESTED_TOPIC
-              value: {{ .Values.env.investigationRequestedTopic | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "incident-service.fullname" . }}
           readinessProbe:
             httpGet: { path: /actuator/health/readiness, port: http }
             initialDelaySeconds: 20
