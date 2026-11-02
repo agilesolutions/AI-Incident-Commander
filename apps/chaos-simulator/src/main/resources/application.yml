@@ -7,7 +7,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
       properties:
-        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        schema.registry.url: ${SKAFKA_SCHEMA_REGISTRY_URL:http://localhost:8081}
         auto.register.schemas: ${SCHEMA_REGISTRY_AUTO_REGISTER:true}
         specific.avro.reader: false
 server:
@@ -49,3 +49,12 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.hibernate.SQL: ${LOG_LEVEL:INFO}
+    org.flywaydb: ${LOG_LEVEL:INFO}
+    org.springframework.boot.autoconfigure.flyway: ${LOG_LEVEL:INFO}
+    org.springframework.boot.jdbc.autoconfigure: ${LOG_LEVEL:INFO}
+    org.springframework.boot.hibernate.autoconfigure: ${LOG_LEVEL:INFO}
