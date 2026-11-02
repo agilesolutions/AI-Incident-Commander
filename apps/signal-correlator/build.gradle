@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
 
-	// Shared generated Avro events
+	// Shared otel components
 	implementation project(':common')
 
 	// Spring
@@ -54,6 +54,7 @@ dependencies {
 	// Observability
 	implementation libs.otlp.appender
 	implementation libs.spring.otlp
+	implementation libs.spring.aop
 
 	// Tests
 	testImplementation libs.spring.otlp.test
@@ -119,7 +120,7 @@ jib {
 				'-Djava.security.egd=file:/dev/./urandom'
 		]
 
-		mainClass = 'com.agilesolutions.audit.AuditApplication'
+		mainClass = 'com.agilesolutions.correlator.SignalCorrelatorApplication'
 
 		creationTime = 'USE_CURRENT_TIMESTAMP'
 		format = 'OCI'

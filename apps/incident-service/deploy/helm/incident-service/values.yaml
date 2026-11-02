@@ -1,4 +1,7 @@
 replicaCount: 1
+namespace:
+  create: false
+  name: services
 image:
   repository: incident-service
   tag: latest
@@ -14,13 +17,21 @@ resources:
     cpu: "1"
     memory: 768Mi
 env:
-  datasourceUrl: jdbc:postgresql://postgresql:5432/incidentdb
+  datasourceUrl: jdbc:postgresql://commander-postgresql.database.svc.cluster.local:5432/incidentdb
   datasourceUsername: incident
-  schemaRegistryUrl: http://schema-registry:8081
-  kafkaBootstrapServers: kafka:9092
+  schemaRegistryUrl: http://redpanda-console.messaging.svc.cluster.local:8080
+  kafkaBootstrapServers: redpanda.messaging.svc.cluster.local:9092
   detectedTopic: incident.detected.v1
   updatedTopic: incident.updated.v1
   investigationRequestedTopic: incident.investigation.requested.v1
 secret:
   name: incident-service-secrets
   datasourcePasswordKey: datasource-password
+
+config:
+  SPRING_PROFILES_ACTIVE: kubernetes
+  LOG_LEVEL: INFO
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-node-collector-collector.monitoring.svc.cluster.local:4318/v1/traces
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://tempo.monitoring.svc.cluster.local:4318
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://otel-node-collector-collector.monitoring.svc.cluster.local:4318/v1/logs
+  OTEL_TRACES_SAMPLER_ARG: 1.0
