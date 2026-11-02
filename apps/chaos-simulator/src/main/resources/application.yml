@@ -21,17 +21,28 @@ simulator:
   topic: ${SIMULATOR_TOPIC:incident.telemetry.v1}
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      probes:
-        enabled: true
-  info:
-    env:
-      enabled: true
+  observations:
+    annotations:
+      enabled=true:
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLER_ARG:1.0}
+
+  opentelemetry:
+    logging:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:http://alloy.monitoring.svc.cluster.local:4318/v1/logs}
+    tracing:
+      export:
+        # Note: OpenTelemetry native tracing uses 'endpoint' under 'opentelemetry'
+        endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://alloy.monitoring.svc.cluster.local:4318/v1/traces}
+
+  otlp:
+    metrics:
+      export:
+        # Crucial: Use the correct Micrometer target property path
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://alloy.monitoring.svc.cluster.local:4318/v1/metrics}
 
 springdoc:
   api-docs:

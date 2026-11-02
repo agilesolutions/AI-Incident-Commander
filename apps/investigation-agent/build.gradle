@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
 	implementation platform(libs.spring.ai.bom)
-	// Shared generated Avro events
+	// Shared otel components
 	implementation project(':common')
 
 	// Spring
@@ -61,6 +61,7 @@ dependencies {
 	// Observability
 	implementation libs.otlp.appender
 	implementation libs.spring.otlp
+	implementation libs.spring.aop
 
 	// Tests
 	testImplementation libs.spring.otlp.test

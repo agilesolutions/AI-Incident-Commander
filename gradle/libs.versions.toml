@@ -40,6 +40,7 @@ spring-kafka-test = { module = "org.springframework.kafka:spring-kafka-test", ve
 # Observability libs include OpenTelemetry API, Micrometer tracing bridge to OpenTelemetry, OTLP exporters for metrics and traces
 spring-otlp = { module = "org.springframework.boot:spring-boot-starter-opentelemetry", version.ref = "springBoot" }
 otlp-appender = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0", version = "2.21.0-alpha" }
+spring-aop = { module = "org.springframework.boot:spring-boot-starter-aop", version.ref = "springBoot" }
 
 # Spring AI
 spring-ai-bom = { module = "org.springframework.ai:spring-ai-bom", version.ref = "spring-ai" }

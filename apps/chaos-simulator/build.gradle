@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
 
-	// Shared generated Avro events
+	// Shared otel components
 	implementation project(':common')
 
 	// Spring
@@ -46,6 +46,10 @@ dependencies {
 	implementation libs.spring.flyway
 	implementation libs.flyway.pg
 	implementation libs.postgresql.runtime
+	// Springdoc OpenAPI
+	implementation libs.spring.doc.api
+	implementation libs.spring.doc.ui
+	implementation libs.spring.aop
 
 	// Lombok
 	implementation libs.lombok
@@ -54,6 +58,7 @@ dependencies {
 	// Observability
 	implementation libs.otlp.appender
 	implementation libs.spring.otlp
+	implementation libs.spring.aop
 
 	// Tests
 	testImplementation libs.spring.otlp.test
@@ -108,7 +113,7 @@ jib {
 	}
 
 	to {
-		image = System.getenv('DOCKERHUB_REGISTRY') + "/signal-correlator:${version}"
+		image = System.getenv('DOCKERHUB_REGISTRY') + "/chaos-simulator:${version}"
 
 		auth {
 			username = System.getenv("DOCKERHUB_USERNAME") ?: ""
@@ -126,7 +131,7 @@ jib {
 				'-Djava.security.egd=file:/dev/./urandom'
 		]
 
-		mainClass = 'com.agilesolutions.audit.AuditApplication'
+		mainClass = 'com.agilesolutions.chaos.ChaosSimulatorApplication'
 
 		creationTime = 'USE_CURRENT_TIMESTAMP'
 		format = 'OCI'

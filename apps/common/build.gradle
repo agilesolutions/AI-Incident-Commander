@@ -21,6 +21,11 @@ repositories {
 dependencies {
   implementation libs.spring.data.validation
   implementation libs.spring.web
+
+  // observability
+  implementation libs.otlp.appender
+  implementation libs.spring.otlp
+
   implementation libs.lombok
   annotationProcessor libs.lombok
 }

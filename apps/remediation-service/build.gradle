@@ -33,7 +33,7 @@ repositories {
 
 dependencies {
 
-	// Shared generated Avro events
+	// Shared otel components
 	implementation project(':common')
 
 	// Spring
@@ -53,6 +53,7 @@ dependencies {
 	// Lombok
 	implementation libs.lombok
 	annotationProcessor libs.lombok
+	implementation libs.spring.aop
 
 	// Observability
 	implementation libs.otlp.appender
