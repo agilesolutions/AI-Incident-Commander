@@ -1,0 +1,5 @@
+postgres_password = "notebook"
+grafana_admin_password = "admin"
+grafana_token = "xxxx"
+grafana_url = "http://localhost:3000"
+prometheus_service_url = "http://prom-stack-prometheus.monitoring.svc.cluster.local:9090"
