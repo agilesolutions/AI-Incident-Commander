@@ -1,0 +1,10 @@
+"spec":
+  "config":
+    "service":
+      "pipelines":
+        "metrics":
+          "receivers":
+          - "otlp"
+          - "hostmetrics"
+          - "prometheus"
+          - "kubeletstats"
