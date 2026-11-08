@@ -20,6 +20,8 @@ De oplossing is ontworpen rond een belangrijk uitgangspunt:
 
 Het project is bedoeld als demonstratie van moderne softwarearchitectuur en engineeringpraktijken voor cloud-native, event-driven en AI-ondersteunde systemen.
 
+<img title="Architecture" alt="Alt text" src="/docs/AI-Incident-Commander.png" width="800">
+
 ## Doelstellingen
 
 - Implementatie van event-driven microservices met Java en Spring Boot.
@@ -212,7 +214,7 @@ technische documentatie.
 ## Ontwikkelroadmap
 
 - [X] Multi-project Gradle-build en basisconfiguratie voor Spring Boot.
-- [ X] Eventcontracten en Kafka-topics definiëren.
+- [X] Eventcontracten en Kafka-topics definiëren.
 - [X] Chaos Simulator implementeren.
 - [X] Deterministische incidentdetectie bouwen.
 - [X] Incident lifecycle en persistente opslag implementeren.
