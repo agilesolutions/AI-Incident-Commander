@@ -14,7 +14,9 @@ public class OllamaInvestigationEngine implements InvestigationEngine {
 
     public OllamaInvestigationEngine(ChatClient.Builder builder, InvestigationPromptBuilder prompts,
                                      ObjectMapper mapper) {
-        this.chatClient = builder.build(); this.prompts = prompts; this.mapper = mapper;
+        this.chatClient = builder.build();
+        this.prompts = prompts;
+        this.mapper = mapper;
     }
 
     @Override

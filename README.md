@@ -154,6 +154,61 @@ ai-incident-commander/
 └── README.md
 ```
 
+## Componentdocumentatie
+
+Deze repository is opgebouwd uit afzonderlijke services, libraries en
+infrastructure-as-code-modules. Iedere hoofdcomponent heeft een eigen
+README.md met een beschrijving van de verantwoordelijkheid, architectuur,
+technische implementatie en configuratie.
+
+Deze documentatie vormt samen met deze hoofdpagina de technische documentatie
+van de AI Incident Commander.
+
+### Applicaties (apps)
+
+| Component | Beschrijving | Documentatie |
+|---|---|---|
+| Chaos Simulator | Genereert gecontroleerde storingen en incidenten om de incidentafhandeling te testen. | [apps/chaos-simulator/README.md](apps/chaos-simulator/README.md) |
+| Signal Correlator | Verzamelt en correleert technische signalen tot betekenisvolle incidenten. | [apps/signal-correlator/README.md](apps/signal-correlator/README.md) |
+| Incident Service | Beheert incidenten, statussen en de bijbehorende levenscyclus. | [apps/incident-service/README.md](apps/incident-service/README.md) |
+| Investigation Agent | Analyseert incidenten met behulp van AI en verzamelt relevante informatie voor de diagnose. | [apps/investigation-agent/README.md](apps/investigation-agent/README.md) |
+| Remediation Service | Beheert gecontroleerde herstelacties en de uitvoering daarvan. | [apps/remediation-service/README.md](apps/remediation-service/README.md) |
+| Command API | Biedt de API voor het aansturen en beheren van incidentafhandeling. | [apps/command-api/README.md](apps/command-api/README.md) |
+
+### Libraries (libs)
+
+| Component | Beschrijving | Documentatie |
+|---|---|---|
+| Event Contracts | Gedeelde event- en berichtcontracten voor communicatie tussen de componenten. | [libs/event-contracts/README.md](libs/event-contracts/README.md) |
+
+### Infrastructure as Code
+
+| Component | Beschrijving | Documentatie |
+|---|---|---|
+| Terraform Provisioning | Infrastructure provisioning en configuratie van de benodigde cloudinfrastructuur. | [terraform/README.md](terraform/README.md) |
+
+> **Opmerking:** Voeg de afzonderlijk gegenereerde Terraform-documentatie toe als
+> `terraform/README.md`. Deze README was nog niet aanwezig in de aangeleverde
+> repositorystructuur.
+
+### Aanbevolen leesvolgorde
+
+Voor een goed begrip van de end-to-end werking van AI Incident Commander
+is de volgende leesvolgorde aanbevolen:
+
+1. **Chaos Simulator** – begrijpen hoe testincidenten worden gegenereerd.
+2. **Signal Correlator** – begrijpen hoe technische signalen worden verwerkt.
+3. **Incident Service** – begrijpen hoe incidenten worden beheerd.
+4. **Investigation Agent** – begrijpen hoe AI incidenten onderzoekt.
+5. **Remediation Service** – begrijpen hoe herstelacties worden beheerd.
+6. **Command API** – begrijpen hoe de verschillende functionaliteiten worden aangestuurd.
+7. **Event Contracts** – inzicht krijgen in de gedeelde eventstructuren en communicatie.
+8. **Terraform Provisioning** – inzicht krijgen in de infrastructuur waarop de oplossing draait.
+
+De hoofdpagina (`README.md`) geeft het totaaloverzicht van het project en de
+architectuur. De afzonderlijke component-README's bieden de verdiepende
+technische documentatie.
+
 ## Ontwikkelroadmap
 
 - [X] Multi-project Gradle-build en basisconfiguratie voor Spring Boot.
