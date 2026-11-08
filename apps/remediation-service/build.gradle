@@ -44,6 +44,10 @@ dependencies {
 	implementation libs.avro
 	implementation libs.kafka.avro.serializer
 
+	// Springdoc
+	iplementation libs.spring.doc.api
+	implementation libs.spring.doc.ui
+
 	// Database
 	implementation libs.spring.data.jdbc
 	implementation libs.spring.flyway
