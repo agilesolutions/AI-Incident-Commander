@@ -1,412 +1,183 @@
 # Terraform Provisioning – AI Incident Commander
 
-[![Terraform](https://img.shields.io/badge/Terraform-%3E%3D%201.9-7B42BC?logo=terraform)](https://developer.hashicorp.com/terraform)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-Cloud--Native-326CE5?logo=kubernetes)](https://kubernetes.io/)
-[![Helm](https://img.shields.io/badge/Helm-Provisioning-0F1689?logo=helm)](https://helm.sh/)
-[![Observability](https://img.shields.io/badge/Observability-LGTM-orange)](https://grafana.com/)
+This directory contains Terraform configuration for provisioning the local Kubernetes platform used by AI Incident Commander. The current local environment targets Docker Desktop Kubernetes and uses the Kubernetes and Helm providers.
 
-> **Terraform provisioneert de platforminfrastructuur; Kubernetes en Helm hosten de services. AI onderzoekt en adviseert. Gecontroleerde automatisering voert uit. Een mens houdt de regie.**
+> **Scope:** this Terraform configuration provisions selected platform and supporting components. It does not currently deploy all six application services or provision every dependency used by the full event-driven platform.
 
-Deze directory bevat de Terraform-configuratie voor het provisioneren van onderdelen van de infrastructuur waarop **AI Incident Commander** kan draaien. De huidige configuratie is gericht op een lokale Kubernetes-omgeving (Docker Desktop-context) en bevat herbruikbare modules voor observability, PostgreSQL, Traefik, een Grafana-webhookreceiver en FluxCD-bootstrap.
+## Table of contents
 
-De README beschrijft wat er daadwerkelijk in deze directory staat. Onderdelen die wel als module aanwezig zijn maar nog niet vanuit de lokale environment worden aangeroepen, worden expliciet als zodanig aangeduid.
+- [1. Purpose and scope](#1-purpose-and-scope)
+- [2. Platform architecture](#2-platform-architecture)
+- [3. Relationship with application services](#3-relationship-with-application-services)
+- [4. Terraform directory structure](#4-terraform-directory-structure)
+- [5. Provisioning overview](#5-provisioning-overview)
+- [6. Terraform modules](#6-terraform-modules)
+- [7. Local environment](#7-local-environment)
+- [8. Configuration and secrets](#8-configuration-and-secrets)
+- [9. Installation and usage](#9-installation-and-usage)
+- [10. Verification and troubleshooting](#10-verification-and-troubleshooting)
+- [11. Security and operational considerations](#11-security-and-operational-considerations)
+- [12. Current status and next steps](#12-current-status-and-next-steps)
 
----
+## 1. Purpose and scope
 
-## Inhoudsopgave
+The Terraform configuration provides a repeatable way to provision infrastructure components for local development and demonstration. The current local root is `terraform/environments/local`.
 
-- [1. Doel en scope](#1-doel-en-scope)
-- [2. Platformarchitectuur](#2-platformarchitectuur)
-- [3. Relatie met de applicatieservices](#3-relatie-met-de-applicatieservices)
-- [4. Terraform-directorystructuur](#4-terraform-directorystructuur)
-- [5. Provisioning-overzicht](#5-provisioning-overzicht)
-- [6. Terraform-modules](#6-terraform-modules)
-- [7. Lokale environment](#7-lokale-environment)
-- [8. Configuratie en secrets](#8-configuratie-en-secrets)
-- [9. Installatie en gebruik](#9-installatie-en-gebruik)
-- [10. Verificatie en troubleshooting](#10-verificatie-en-troubleshooting)
-- [11. Security en operationele aandachtspunten](#11-security-en-operationele-aandachtspunten)
-- [12. Huidige status en vervolgstappen](#12-huidige-status-en-vervolgstappen)
+### What is included in this directory?
 
----
+- Terraform environment roots under `environments/`.
+- Reusable infrastructure modules under `modules/`.
+- Kubernetes resources managed through the Kubernetes provider.
+- Helm releases managed through the Helm provider.
+- Local configuration for observability, PostgreSQL, ingress, and a Grafana webhook receiver.
 
-## 1. Doel en scope
+The configuration is a development/demo foundation, not a complete production landing zone. Review the actual module calls in the environment root before assuming a module is deployed.
 
-Terraform wordt gebruikt om infrastructuurcomponenten reproduceerbaar te declareren en te beheren. De configuratie maakt gebruik van:
-
-- **Terraform** voor declaratieve infrastructuurdefinities.
-- **Kubernetes provider** voor namespaces, ConfigMaps, Deployments en Services.
-- **Helm provider** voor het installeren van Kubernetes-platformcomponenten.
-- **Helm charts** voor onder andere Grafana LGTM, PostgreSQL en Traefik.
-- **FluxCD provider en GitHub provider** in de FluxCD-module voor GitOps-bootstrap.
-- **TLS provider** voor het genereren van een SSH deploy key voor FluxCD.
-
-### Wat valt binnen deze directory?
-
-| Onderdeel | In de repository aanwezig | Aangeroepen door `environments/local` |
-|---|---:|---:|
-| Grafana LGTM-stack | Ja | Ja |
-| PostgreSQL | Ja | Ja |
-| Traefik ingress controller | Ja | Ja |
-| Grafana webhook receiver | Ja | Ja |
-| Grafana Alloy standalone-stack | Ja | Nee |
-| FluxCD/GitHub bootstrap | Ja | Nee; bootstrap-resource is bovendien uitgecommentarieerd |
-| MongoDB-module | Niet aangetroffen | Nee |
-| Qdrant-module | Niet aangetroffen | Nee |
-
-**Belangrijk:** Terraform provisioneert in de huidige lokale root-configuratie niet automatisch alle applicatieservices. De applicaties zelf staan onder `apps/` en hebben eigen container- en Helm-deploymentbestanden. De Terraform-configuratie richt zich op platformcomponenten en ondersteunende infrastructuur.
-
-## 2. Platformarchitectuur
+## 2. Platform architecture
 
 ### 2.1 Infrastructure provisioning
 
-Onderstaand diagram geeft de feitelijke relaties weer die in `terraform/environments/local/main.tf` zijn gedeclareerd.
+Terraform provisions Kubernetes namespaces and selected platform services. Helm is used for packaged components; the Kubernetes provider is used for native resources such as ConfigMaps, Deployments, and Services.
 
-```mermaid
-flowchart TB
-    TF["Terraform<br/>terraform/environments/local"] --> K8S["Kubernetes API<br/>context: docker-desktop"]
-    TF --> HELM["Helm provider"]
+### 2.2 Observability and incident response
 
-    HELM --> LGTM["Grafana LGTM Helm release<br/>namespace: monitoring"]
-    HELM --> PG["Bitnami PostgreSQL<br/>namespace: database"]
-    HELM --> TR["Traefik Helm release<br/>namespace: traefik"]
+The platform includes an observability stack and a webhook receiver intended to support metrics, logs, traces, and alert-driven workflows. The receiver is a simple demonstration component and should not be exposed publicly without authentication and authorisation.
 
-    K8S --> WH["Grafana webhook receiver<br/>Deployment + Service + ConfigMap"]
-    K8S --> NS1["monitoring namespace"]
-    K8S --> NS2["database namespace"]
-    K8S --> NS3["traefik namespace"]
+### 2.3 LGTM components
 
-    LGTM --> GRAF["Grafana"]
-    LGTM --> PROM["Prometheus"]
-    LGTM --> LOKI["Loki"]
-    LGTM --> TEMPO["Tempo"]
-    LGTM --> OTEL["OpenTelemetry Operator / Collectors"]
+The LGTM stack refers to Loki, Grafana, Tempo, and a metrics backend such as Mimir/Prometheus, depending on the chart configuration. The exact components and endpoints are defined by the Helm values and module variables in this repository.
 
-    GRAF -->|"Alert webhook"| WH
-```
+## 3. Relationship with the application services
 
-### 2.2 Observability en incident response
+The Terraform layer supports the application platform but does not replace the lifecycle responsibilities of the services:
 
-De applicatiearchitectuur genereert en verwerkt events via Kafka. De observability-stack verzamelt metrics, logs en traces om de applicaties operationeel inzichtelijk te maken. Grafana-alerts kunnen naar de in-cluster webhookreceiver worden gestuurd.
+- `chaos-simulator` generates synthetic telemetry.
+- `signal-correlator` detects incidents from signals.
+- `incident-service` manages incident state and evidence.
+- `investigation-agent` analyses incidents and produces recommendations.
+- `remediation-service` validates approvals and controls execution.
+- `command-api` exposes operator-facing commands and queries.
 
-```mermaid
-flowchart LR
-    subgraph APP["AI Incident Commander – applicatielaag"]
-      CS["Chaos Simulator"]
-      SC["Signal Correlator"]
-      IS["Incident Service"]
-      IA["Investigation Agent"]
-      RS["Remediation Service"]
-      CA["Command API"]
-      CS -->|"Telemetry events"| K["Apache Kafka"]
-      K --> SC
-      SC -->|"Incident detected"| K
-      K --> IS
-      IS -->|"Investigation requested"| K
-      K --> IA
-      IA -->|"Investigation result"| K
-      CA -. "REST commands" .-> IS
-      CA -. "REST commands" .-> RS
-    end
+### 3.1 Human control for remediation
 
-    subgraph OBS["Observability – Terraform LGTM"]
-      AL["Grafana Alloy / OpenTelemetry"]
-      P["Prometheus<br/>metrics"]
-      L["Loki<br/>logs"]
-      T["Tempo<br/>traces"]
-      G["Grafana<br/>dashboards & alerts"]
-      AL --> P
-      AL --> L
-      AL --> T
-      P --> G
-      L --> G
-      T --> G
-    end
+> **AI investigates and advises. Controlled automation executes. A human remains in control.**
 
-    APP -. "telemetry / OTLP<br/>configuration-dependent" .-> AL
-    G -->|"Webhook"| WH["grafana-webhook<br/>monitoring namespace"]
-```
+Infrastructure provisioning must not be confused with permission for the AI agent to change the cluster. The investigation agent should not receive Kubernetes write permissions by default. Any future execution adapter must use narrowly scoped RBAC and explicit approval controls.
 
-Het tweede diagram toont de beoogde samenhang op platformniveau. De exacte OTLP-endpoints, exporterconfiguratie en instrumentatie per applicatie moeten in de applicatieconfiguratie en Kubernetes-deployments overeenkomen met de daadwerkelijk uitgerolde observability-stack.
+## 4. Terraform directory structure
 
-### 2.3 LGTM-componenten
-
-| Component | Rol |
-|---|---|
-| Grafana | Dashboards, visualisatie en alerting |
-| Prometheus | Metrics-opslag en PromQL-query's |
-| Loki | Centrale opslag en query's voor logs |
-| Tempo | Distributed tracing |
-| OpenTelemetry Operator | Beheer van OpenTelemetry Collector-resources |
-| OpenTelemetry Collector(s) | Ontvangst en verwerking van telemetry |
-| Grafana Alloy | Collector/distributiecomponent in de afzonderlijke `alloy`-module |
-
-De lokale environment gebruikt de `grafana-stack`-module. De zelfstandige `alloy`-module is aanwezig, maar wordt niet vanuit de huidige lokale `main.tf` aangeroepen. Gebruik beide stacks niet zonder eerst de gewenste ownership en eventuele overlap van Prometheus, Loki, Tempo en collectors te bepalen.
-
-## 3. Relatie met de applicatieservices
-
-AI Incident Commander bestaat uit zes applicatieservices. Hun functionele rollen zijn:
-
-| Service | Verantwoordelijkheid | Infrastructuurrelatie |
-|---|---|---|
-| `chaos-simulator` | Genereert gesimuleerde telemetry en verstoringen | Publiceert events naar Kafka; telemetry kan door observability worden verzameld |
-| `signal-correlator` | Correlatie van signalen en deterministische incidentdetectie | Kafka-consumer/producer; metrics en logs |
-| `incident-service` | Incident lifecycle, status en bewijsregistratie | PostgreSQL voor persistente incidentgegevens; Kafka voor events |
-| `investigation-agent` | AI-onderzoek en rapportage | LLM-provider (bijvoorbeeld lokaal Ollama, afhankelijk van deployment); PostgreSQL/Kafka |
-| `remediation-service` | Valideert goedgekeurde herstelacties en voert toegestane acties uit | PostgreSQL/Kafka; Kubernetes-rechten moeten minimaal en expliciet worden ingericht |
-| `command-api` | REST-interface voor incidentbeheer en commando's | Communiceert met downstream services via de geconfigureerde service-URL's |
-
-**Let op:** de Terraform environment in deze directory declareert momenteel geen Kafka-, Ollama-, MongoDB- of Qdrant-module en declareert ook niet de Helm releases van de zes applicatieservices. Deze componenten kunnen via andere deploymentbestanden of externe infrastructuur worden geleverd; ze worden niet door de hier getoonde lokale Terraform-root geprovisioneerd.
-
-### 3.1 Menselijke controle bij remediation
-
-```mermaid
-flowchart TD
-    A["Investigation Agent<br/>analyseert en adviseert"] --> B["Remediation proposal"]
-    B --> C{"Menselijke goedkeuring"}
-    C -->|"Afgewezen"| D["Reject / audit event"]
-    C -->|"Goedgekeurd"| E["Remediation Service"]
-    E --> F["Allowlisted action<br/>met gevalideerde approval"]
-    F --> G["Uitvoering"]
-    G --> H["Onafhankelijke verificatie"]
-    H --> I["Audit / resultaat"]
-```
-
-Terraform-infrastructuur verleent op zichzelf geen toestemming om herstelacties uit te voeren. Kubernetes RBAC, service accounts, secrets en netwerktoegang moeten afzonderlijk en least-privilege worden ingericht. De AI-agent hoort geen standaard schrijfrechten op het cluster te krijgen.
-
-## 4. Terraform-directorystructuur
-
-```text
-terraform/
-├── environments/
-│   └── local/
-│       ├── backend.tf
-│       ├── main.tf
-│       ├── outputs.tf
-│       ├── providers.tf
-│       ├── variables.tf
-│       └── terraform.auto.tfvars
-│
-└── modules/
-    ├── alloy/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   ├── outputs.tf
-    │   ├── versions.tf
-    │   └── *.yaml.tpl / *.river.tpl
-    │
-    ├── fluxcd/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   ├── outputs.tf
-    │   └── versions.tf
-    │
-    ├── grafana-stack/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   ├── outputs.tf
-    │   ├── versions.tf
-    │   └── otel-metrics-patch.yaml
-    │
-    ├── grafana-webhook-receiver/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   ├── outputs.tf
-    │   └── versions.tf
-    │
-    ├── postgresql/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   ├── outputs.tf
-    │   ├── versions.tf
-    │   └── values.yaml
-    │
-    └── traefik/
-        ├── main.tf
-        ├── variables.tf
-        ├── outputs.tf
-        ├── versions.tf
-        └── values.yaml.tpl
-```
+The repository separates environment roots from reusable modules. The local root is `terraform/environments/local`; reusable components are located under `terraform/modules/`.
 
 ### Environment versus module
 
-- `environments/local` is de root module: hier worden providers geconfigureerd en modules met concrete waarden aangeroepen.
-- `modules/*` bevat herbruikbare infrastructuurblokken.
-- `*.yaml.tpl` en `*.river.tpl` zijn templates die door Terraform worden ingevuld.
-- `backend.tf` gebruikt momenteel een lokale Terraform statefile.
+- **Environment root:** declares providers, variables, module instances, and outputs for a specific target environment.
+- **Module:** encapsulates a reusable infrastructure component and its inputs/outputs.
 
-## 5. Provisioning-overzicht
+Terraform state is local in the current setup. Protect it because state can contain sensitive values.
 
-De huidige `environments/local/main.tf` declareert vier modules:
+## 5. Provisioning overview
+
+The current `environments/local/main.tf` declares four modules:
 
 1. `grafana-stack` in namespace `monitoring`.
-2. `postgresql` met release `notebook-postgresql` in namespace `database`.
+2. `postgresql` with release `notebook-postgresql` in namespace `database`.
 3. `traefik` in namespace `traefik`.
 4. `grafana-webhook-receiver` in namespace `monitoring`.
 
-De dependencyrelaties binnen de modules bepalen de volgorde van onderliggende resources. Terraform kan onafhankelijke modules parallel uitvoeren.
+Dependencies within modules determine the order of their underlying resources. Terraform may execute independent modules in parallel.
 
 ```mermaid
 flowchart TD
-    A["terraform init"] --> B["terraform validate"]
-    B --> C["terraform plan"]
-    C --> D{"Plan gecontroleerd?"}
-    D -->|"Nee"| C
-    D -->|"Ja"| E["terraform apply"]
-    E --> F["Namespaces + Helm releases"]
-    E --> G["Kubernetes ConfigMaps / Deployment / Service"]
-    F --> H["Platformcomponenten beschikbaar"]
+    A[terraform init] --> B[terraform validate]
+    B --> C[terraform plan]
+    C --> D{Plan reviewed?}
+    D -->|No| C
+    D -->|Yes| E[terraform apply]
+    E --> F[Namespaces and Helm releases]
+    E --> G[Kubernetes ConfigMaps, Deployment, Service]
+    F --> H[Platform components available]
     G --> H
-    H --> I["kubectl / Helm smoke checks"]
+    H --> I[kubectl / Helm smoke checks]
 ```
 
-## 6. Terraform-modules
+## 6. Terraform modules
 
 ### 6.1 `grafana-stack`
 
-**Doel:** installatie van een samengestelde Grafana LGTM-stack via de PromptlyLabs Helm chart.
+**Purpose:** install a combined Grafana LGTM stack using the PromptlyLabs Helm chart.
 
-De module:
+The module:
 
-- Maakt de opgegeven namespace aan (in de lokale environment: `monitoring`).
-- Installeert `cert-manager` (standaard versie `v1.18.2`).
-- Installeert de OpenTelemetry Operator (standaard chartversie `0.122.1`).
-- Installeert de `lgtm` Helm chart.
-- Configureert Grafana, Prometheus, Loki en Tempo via Helm values.
-- Schakelt de ingebouwde OpenTelemetry Operator in de umbrella chart uit, omdat de operator apart wordt geïnstalleerd.
-- Configureert Tempo metrics generation en remote-write richting de opgegeven Prometheus service-URL.
-- Genereert een patchbestand voor de OpenTelemetry Collector metrics pipeline.
-- Maakt een ConfigMap met Grafana contact point en notification policy voor de lokale webhookreceiver.
+- Creates the requested namespace (in the local environment: `monitoring`).
+- Installs `cert-manager` (default version `v1.18.2`).
+- Installs the OpenTelemetry Operator (default chart version `0.122.1`).
+- Installs the `lgtm` Helm chart.
+- Configures Grafana, Prometheus, Loki, and Tempo through Helm values.
+- Disables the OpenTelemetry Operator embedded in the umbrella chart because the operator is installed separately.
+- Configures Tempo metrics generation and remote write to the configured Prometheus service endpoint.
 
-Belangrijke variabelen:
-
-| Variabele | Betekenis |
-|---|---|
-| `namespace` | Namespace voor de observability-stack |
-| `chart_version` | LGTM chartversie |
-| `grafana_admin_password` | Grafana admin-wachtwoord (sensitive) |
-| `persistence_enabled` | In-/uitschakelen van persistente opslag |
-| `persistence_size` | Opslaggrootte |
-| `prometheus_service_url` | Prometheus remote-write endpoint |
-| `custom_values` | Aanvullende Helm values |
-
-Output: `helm_release_status` en `grafana_service_url`.
-
-**Patch-aandachtspunt:** de module gebruikt een `local-exec` provisioner met PowerShell om een OpenTelemetryCollector-resource te patchen via `kubectl`. Dit vereist PowerShell, een werkende kubeconfig en een passend collector-resourceobject in de cluster. Controleer ook dat het patchbestand dat door de provisioner wordt gebruikt overeenkomt met de gegenereerde patch. De provisioner is niet volledig platformonafhankelijk.
+Review the chart values and module variables before changing versions or endpoints. The module also contains a local provisioning step for an OpenTelemetryCollector patch; this currently introduces a dependency on PowerShell and on the expected Kubernetes resource being present.
 
 ### 6.2 `postgresql`
 
-**Doel:** PostgreSQL installeren met de Bitnami Helm chart.
+**Purpose:** deploy PostgreSQL through a Helm release in the `database` namespace.
 
-De lokale environment configureert:
-
-- Helm release: `notebook-postgresql`
-- Namespace: `database`
-- Chartversie: `18.12.1`
-- Database: `notebook`
-- Gebruiker: `notebook`
-- Persistent storage: `8Gi`
-
-De wachtwoordwaarde komt uit `var.postgres_password` en wordt als sensitive gedeclareerd.
-
-De module-output bevat servicegegevens. Controleer vóór applicatie-integratie de service-DNS-naam en databaseconfiguratie: de huidige output `connection_host` verwijst naar `mongodb.${var.namespace}.svc.cluster.local`, terwijl de release en service PostgreSQL betreffen. Dit lijkt een achtergebleven hostnaam en moet worden gecorrigeerd voordat applicaties deze output gebruiken.
+The module exposes connection-related outputs for application configuration. Verify the service name and DNS hostname against the actual Helm release. The current output implementation has been identified as a point requiring review: `connection_host` appears to reference a MongoDB hostname even though this module provisions PostgreSQL.
 
 ### 6.3 `traefik`
 
-**Doel:** Traefik als Kubernetes ingress/controller installeren via Helm.
+**Purpose:** deploy Traefik as the ingress component in the `traefik` namespace.
 
-Lokale configuratie:
-
-- Namespace: `traefik`
-- Replica's: `1`
-- Metrics: uitgeschakeld
-- Chartversie in module: `38.0.2`
-
-De chartwaarden configureren access logs en topology spread constraints. Metrics en ServiceMonitor kunnen via `enable_metrics` worden ingeschakeld.
-
-De module maakt een namespace aan en installeert de Helm release `traefik-nginx`. Controleer de daadwerkelijke Service- en LoadBalancer/NodePort-configuratie voordat externe toegang tot applicaties wordt verwacht; de module-output geeft momenteel alleen namespace en release name terug.
+The local configuration uses a single replica. This is suitable as a local development baseline, not as a highly available production ingress configuration.
 
 ### 6.4 `grafana-webhook-receiver`
 
-**Doel:** een eenvoudige HTTP-webhookreceiver binnen Kubernetes beschikbaar maken voor Grafana-alerts.
+**Purpose:** deploy a small Kubernetes webhook receiver in the `monitoring` namespace.
 
-De module maakt:
-
-- Een ConfigMap met een kleine Python HTTP-server.
-- Een Deployment met readiness- en liveness-probes.
-- Een ClusterIP Service.
-- Een `/health` endpoint en een `/webhook` POST endpoint.
-
-Defaults:
-
-| Instelling | Waarde |
-|---|---|
-| Namespace | `monitoring` |
-| Deployment/Service naam | `grafana-webhook` |
-| Image | `python:3.12-alpine` |
-| Port | `8080` |
-| Replicas | `1` |
-
-De receiver logt het ontvangen JSON-payload en retourneert `{"status":"received"}`. Dit is een demonstratie-/integratie-endpoint; het verwerkt nog geen incidentcommando's en voert geen remediation uit.
+The module creates the Kubernetes resources required by the receiver, including its ConfigMap, Deployment, and Service. The example receiver listens on port `8080` and exposes a health endpoint. It is a demonstration scaffold; authentication, authorisation, payload validation, and network restrictions must be added before use beyond a local environment.
 
 ### 6.5 `alloy`
 
-**Doel:** alternatieve, zelfstandige observability-installatie met afzonderlijke Helm releases voor Loki, Tempo, Prometheus (`kube-prometheus-stack`) en Grafana Alloy.
-
-De module genereert Alloy-configuratie via templates en configureert endpoints voor Loki, Tempo en Prometheus remote write.
-
-**Status:** de module bestaat, maar wordt niet aangeroepen in `environments/local/main.tf`. De lokale environment gebruikt `grafana-stack`. Bepaal eerst welke observability-architectuur leidend moet zijn voordat deze module wordt geactiveerd; anders kunnen dubbele releases en overlappende collectors ontstaan.
+The repository contains a separate Alloy module for telemetry collection/forwarding. It is not currently called by the local environment root described above. Decide whether Alloy or the collector configuration bundled with the LGTM stack is the intended deployment, and document one authoritative path.
 
 ### 6.6 `fluxcd`
 
-**Doel:** bootstrap van FluxCD voor GitOps-synchronisatie met een GitHub-repository.
+The repository contains a FluxCD module. The `flux_bootstrap_git` configuration is commented out and the FluxCD module is not currently invoked from `environments/local`. Bootstrap should only be enabled after the Git repository, credentials, deploy-key permissions, and reconciliation model have been deliberately configured.
 
-De module bevat resources voor:
+## 7. Local environment
 
-- Een ECDSA P-384 private key via de TLS provider.
-- Optioneel aanmaken van een GitHub repository.
-- Een GitHub deploy key.
-- Flux provider configuratie voor bootstrap en extra controllers.
-
-De documentatie in de module beschrijft een Image Automation workflow waarbij Flux image tags volgt, Git-manifests bijwerkt en de clusterreconciliatie uitvoert.
-
-**Status en belangrijke beperking:** de `flux_bootstrap_git` resource in `modules/fluxcd/main.tf` staat momenteel binnen een block comment en wordt dus niet uitgevoerd. De module wordt bovendien niet vanuit de lokale environment aangeroepen. De GitHub repository/deploy-key resources zijn daarom niet gelijk aan een actieve FluxCD bootstrap. Voor activering moeten de provider credentials, repository, deploy-key-permissies en bootstrap-resource bewust worden ingericht.
-
-## 7. Lokale environment
-
-De lokale providerconfiguratie gebruikt:
+The local environment is configured for Docker Desktop Kubernetes.
 
 - Kubernetes context: `docker-desktop`
 - Kubeconfig: `~/.kube/config`
-- Helm provider met dezelfde Kubernetes context
-- Grafana provider met `grafana_url` en `grafana_token`
+- Helm provider: uses the same Kubernetes context
+- Grafana provider: configured using `grafana_url` and `grafana_token`
 
-Pas `config_context` aan wanneer je bijvoorbeeld `kind`, `minikube` of een andere Kubernetes-context gebruikt.
+Change `config_context` when using another context, such as `kind`, `minikube`, or a different Kubernetes cluster.
 
-### Benodigdheden
+### Prerequisites
 
 - Terraform `>= 1.9`
-- Docker Desktop met Kubernetes ingeschakeld, of een compatibele lokale Kubernetes-cluster
-- `kubectl` met een werkende kubeconfig
+- Docker Desktop with Kubernetes enabled, or a compatible local Kubernetes cluster
+- `kubectl` with a working kubeconfig
 - Helm
-- PowerShell wanneer de LGTM patch-provisioner wordt uitgevoerd
-- Toegang tot de gebruikte Helm repositories/OCI registry
+- PowerShell when the LGTM patch provisioner is executed
+- Access to the required Helm repositories/OCI registry
 
-## 8. Configuratie en secrets
+## 8. Configuration and secrets
 
-De environment bevat `terraform.auto.tfvars`. In de aangeleverde repository bevat dit bestand voorbeeldwaarden zoals `notebook`, `admin` en `xxxx`. Gebruik deze waarden uitsluitend als lokale placeholders en niet voor een gedeelde of productieomgeving.
+The environment includes `terraform.auto.tfvars`. In the supplied repository, this file contains example values such as `notebook`, `admin`, and `xxxx`. Treat these values only as local placeholders; never use them in a shared or production environment.
 
-**Aanbevolen werkwijze:**
+**Recommended practices:**
 
-1. Commit geen echte wachtwoorden, tokens of private keys.
-2. Voeg lokale `*.tfvars`-bestanden met secrets toe aan `.gitignore`.
-3. Gebruik een apart `terraform.tfvars.example` met uitsluitend niet-geheime placeholders.
-4. Lever secrets aan via environment variables (`TF_VAR_*`) of een secret manager.
-5. Beperk toegang tot Terraform state; `sensitive = true` maskeert output maar versleutelt state niet.
-6. Roteer eventuele credentials die ooit in een publieke of gedeelde repository zijn terechtgekomen.
+1. Never commit real passwords, tokens, or private keys.
+2. Add local `*.tfvars` files containing secrets to `.gitignore`.
+3. Keep a separate `terraform.tfvars.example` containing non-secret placeholders only.
+4. Supply secrets through environment variables (`TF_VAR_*`) or a secret manager.
+5. Restrict access to Terraform state; `sensitive = true` masks output but does not encrypt state.
+6. Rotate any credentials that may have been exposed in a public or shared repository.
 
-Voorbeeld van variabelen via de shell:
+Example environment variables:
 
 ```bash
 export TF_VAR_postgres_password='use-a-secret-manager'
@@ -414,7 +185,7 @@ export TF_VAR_grafana_admin_password='use-a-secret-manager'
 export TF_VAR_grafana_token='use-a-secret-manager'
 ```
 
-Op PowerShell:
+PowerShell:
 
 ```powershell
 $env:TF_VAR_postgres_password = "use-a-secret-manager"
@@ -422,13 +193,13 @@ $env:TF_VAR_grafana_admin_password = "use-a-secret-manager"
 $env:TF_VAR_grafana_token = "use-a-secret-manager"
 ```
 
-De variabelen `grafana_url`, `grafana_token` en `prometheus_service_url` moeten overeenkomen met de daadwerkelijk bereikbare services. De Grafana provider kan pas succesvol authenticeren wanneer de opgegeven Grafana-instance bereikbaar is.
+The `grafana_url`, `grafana_token`, and `prometheus_service_url` variables must match the services that are actually reachable. The Grafana provider can authenticate successfully only when the configured Grafana instance is reachable.
 
-## 9. Installatie en gebruik
+## 9. Installation and usage
 
-Voer de commando's uit vanuit `terraform/environments/local`.
+Run the commands from `terraform/environments/local`.
 
-### 9.1 Kubernetes-context controleren
+### 9.1 Check the Kubernetes context
 
 ```bash
 kubectl config current-context
@@ -436,56 +207,56 @@ kubectl cluster-info
 kubectl get nodes
 ```
 
-De huidige providerconfiguratie verwacht `docker-desktop`.
+The current provider configuration expects `docker-desktop`.
 
-### 9.2 Terraform initialiseren
+### 9.2 Initialise Terraform
 
 ```bash
 terraform init
 ```
 
-### 9.3 Configuratie formatteren en valideren
+### 9.3 Format and validate the configuration
 
 ```bash
 terraform fmt -recursive
 terraform validate
 ```
 
-### 9.4 Plan bekijken
+### 9.4 Review the plan
 
 ```bash
 terraform plan
 ```
 
-Controleer zorgvuldig welke namespaces, Helm releases, Deployments, ConfigMaps en Services worden aangemaakt of gewijzigd.
+Carefully review which namespaces, Helm releases, Deployments, ConfigMaps, and Services will be created or changed.
 
-### 9.5 Provisioning uitvoeren
+### 9.5 Apply the configuration
 
 ```bash
 terraform apply
 ```
 
-Bevestig de voorgestelde wijzigingen pas nadat het plan is gecontroleerd.
+Confirm the proposed changes only after reviewing the plan.
 
-### 9.6 Outputs opvragen
+### 9.6 Inspect outputs
 
 ```bash
 terraform output
 ```
 
-Sensitive outputs blijven afhankelijk van hun declaratie gemaskeerd. Gebruik `terraform output -raw <naam>` alleen wanneer dat bewust nodig is.
+Sensitive outputs remain masked according to their declarations. Use `terraform output -raw <name>` only when explicitly required.
 
-### 9.7 Provisioning verwijderen
+### 9.7 Destroy the provisioned resources
 
 ```bash
 terraform destroy
 ```
 
-`destroy` verwijdert resources die door deze Terraform state worden beheerd. Controleer eerst de state en het plan. Persistente volumes, databases en dataretentie verdienen extra aandacht.
+`destroy` removes resources managed by this Terraform state. Review the state and plan first. Pay particular attention to persistent volumes, databases, and data retention.
 
-## 10. Verificatie en troubleshooting
+## 10. Verification and troubleshooting
 
-### Kubernetes-resources
+### Kubernetes resources
 
 ```bash
 kubectl get namespaces
@@ -506,9 +277,9 @@ helm status notebook-postgresql -n database
 helm status traefik-nginx -n traefik
 ```
 
-Controleer de werkelijke release name in de Helm output wanneer een release niet is aangemaakt.
+If a release is not found, check the actual release name in the Helm output.
 
-### Webhookreceiver
+### Webhook receiver
 
 ```bash
 kubectl get deployment grafana-webhook -n monitoring
@@ -516,7 +287,7 @@ kubectl get service grafana-webhook -n monitoring
 kubectl logs deployment/grafana-webhook -n monitoring
 ```
 
-Test binnen het cluster:
+Test from inside the cluster:
 
 ```bash
 kubectl run webhook-test -n monitoring --rm -it \
@@ -524,84 +295,83 @@ kubectl run webhook-test -n monitoring --rm -it \
   curl -i http://grafana-webhook:8080/health
 ```
 
-### Veelvoorkomende problemen
+### Common problems
 
-| Probleem | Controle |
+| Problem | Check |
 |---|---|
-| Kubernetes provider kan niet verbinden | Kubeconfig-pad en `docker-desktop` context controleren |
-| Helm chart download mislukt | Repository/OCI-toegang, chartversie en netwerk controleren |
-| Grafana provider authenticatie faalt | `grafana_url`, token en bereikbaarheid controleren |
-| PVC blijft Pending | StorageClass en beschikbare clusteropslag controleren |
-| LGTM patch faalt | PowerShell, `kubectl`, namespace en OpenTelemetryCollector-resource controleren |
-| Webhook niet bereikbaar | Namespace, Service DNS, port 8080 en Pod readiness controleren |
-| Terraform plan faalt op outputs | Controleren of alle gerefereerde modules daadwerkelijk bestaan en zijn gedeclareerd |
+| Kubernetes provider cannot connect | Check kubeconfig path and the `docker-desktop` context |
+| Helm chart download fails | Check repository/OCI access, chart version, and network connectivity |
+| Grafana provider authentication fails | Check `grafana_url`, token, and reachability |
+| PVC remains Pending | Check the StorageClass and available cluster storage |
+| LGTM patch fails | Check PowerShell, `kubectl`, namespace, and the OpenTelemetryCollector resource |
+| Webhook is unreachable | Check namespace, Service DNS, port 8080, and Pod readiness |
+| Terraform plan fails on outputs | Check whether all referenced modules exist and are declared |
 
-## 11. Security en operationele aandachtspunten
+## 11. Security and operational considerations
 
-### 11.1 Secrets en Terraform state
+### 11.1 Secrets and Terraform state
 
-- De lokale backend schrijft state naar `terraform.tfstate`.
-- Terraform state kan wachtwoorden, tokens en andere gevoelige waarden bevatten.
-- Beveilig de statefile met passende filesystem-permissies en neem deze niet op in Git.
-- Voor gedeelde omgevingen is een remote backend met encryptie, toegangscontrole en locking aan te bevelen.
-- Gebruik geen standaardwachtwoorden zoals `admin` of `notebook` buiten een geïsoleerde lokale demo.
+- The local backend writes state to `terraform.tfstate`.
+- Terraform state may contain passwords, tokens, and other sensitive values.
+- Protect the state file with appropriate filesystem permissions and do not commit it to Git.
+- For shared environments, use a remote backend with encryption, access control, and state locking.
+- Do not use default passwords such as `admin` or `notebook` outside an isolated local demo.
 
 ### 11.2 Kubernetes RBAC
 
-- Gebruik afzonderlijke service accounts per applicatie.
-- Geef de Investigation Agent geen standaard Kubernetes write permissions.
-- Beperk Remediation Service tot expliciet toegestane resources en acties.
-- Scheid observability-read access van remediation-write access.
-- Beveilig Grafana en webhook endpoints; de huidige receiver is een eenvoudige demonstratie en bevat geen authenticatie of autorisatie.
+- Use separate service accounts for each application.
+- Do not grant the Investigation Agent Kubernetes write permissions by default.
+- Restrict the Remediation Service to explicitly permitted resources and actions.
+- Separate observability read access from remediation write access.
+- Secure Grafana and webhook endpoints; the current receiver is a simple demonstration and has no authentication or authorisation.
 
-### 11.3 Beschikbaarheid en opslag
+### 11.3 Availability and storage
 
-- De lokale Traefik-configuratie gebruikt één replica.
-- De webhookreceiver gebruikt standaard één replica.
-- Persistentie is ingeschakeld voor onderdelen van de LGTM-stack en PostgreSQL gebruikt een persistent volume via de Helm chart.
-- De configuratie is een lokale ontwikkel-/demonstratiebasis, geen complete high-availability productieomgeving.
-- Definieer back-up, restore, retentie, resource requests/limits en storage policies voordat productiegegevens worden opgeslagen.
+- The local Traefik configuration uses one replica.
+- The webhook receiver defaults to one replica.
+- Persistence is enabled for parts of the LGTM stack, and PostgreSQL uses a persistent volume through its Helm chart.
+- This configuration is a local development/demo baseline, not a complete high-availability production environment.
+- Define backup, restore, retention, resource requests/limits, and storage policies before storing production data.
 
-### 11.4 Terraform lifecycle en drift
+### 11.4 Terraform lifecycle and drift
 
-- Gebruik `terraform plan` vóór iedere apply.
-- Voer geen handmatige wijzigingen uit die de Terraform state ongemerkt laten afwijken.
-- Houd chartversies en provider-versies expliciet vast.
-- Beoordeel `local-exec` provisioners kritisch; zij zijn minder declaratief en kunnen bij heruitvoering of gewijzigde omgevingen onverwacht gedrag veroorzaken.
+- Run `terraform plan` before every apply.
+- Avoid manual changes that cause Terraform state to drift without being reconciled.
+- Pin chart and provider versions explicitly.
+- Review `local-exec` provisioners carefully; they are less declarative and may behave unexpectedly when rerun or used in a changed environment.
 
-## 12. Huidige status en vervolgstappen
+## 12. Current status and next steps
 
-De onderstaande punten zijn afgeleid van de aangeleverde Terraform-bestanden. Ze zijn bedoeld als concrete checklist vóór een volledige end-to-end provisioning.
+The following points are based on the supplied Terraform files. They form a practical checklist before full end-to-end provisioning.
 
-### Geconstateerde aandachtspunten in de huidige configuratie
+### Issues identified in the current configuration
 
-- [ ] `environments/local/outputs.tf` verwijst naar `module.mongodb` en `module.qdrant`, maar deze modules zijn niet gedeclareerd in de huidige `main.tf` en er zijn geen bijbehorende module-directories in de aangeleverde Terraform-directory aangetroffen.
-- [ ] `modules/postgresql/outputs.tf` geeft `connection_host` terug als `mongodb.${var.namespace}.svc.cluster.local`; dit lijkt niet overeen te komen met de PostgreSQL-release/service.
-- [ ] `grafana-stack` gebruikt een `local-exec` PowerShell-provisioner voor het patchen van een OpenTelemetryCollector. Dit maakt de provisioning afhankelijk van PowerShell en de precieze clusterresource.
-- [ ] `grafana-stack` genereert `.generated/lgtm-otel-metrics-patch.yaml`, terwijl de provisioner het bestand `otel-metrics-patch.yaml` gebruikt. Controleer of dit bewust twee verschillende bestanden zijn en houd de patchbron eenduidig.
-- [ ] De lokale environment roept `grafana-stack` aan; de afzonderlijke `alloy`-module is niet aangesloten. Leg vast welke observability-variant leidend is.
-- [ ] `flux_bootstrap_git` is uitgecommentarieerd en de FluxCD-module wordt niet vanuit `environments/local` aangeroepen.
-- [ ] `terraform.auto.tfvars` bevat voorbeeldcredentials in plaintext. Vervang deze door veilige lokale waarden en commit geen echte secrets.
-- [ ] De Terraform-root configureert geen Kafka, Ollama, MongoDB, Qdrant of de zes applicatieservices. Leg vast waar deze componenten afzonderlijk worden uitgerold.
-- [ ] Controleer de Grafana webhookreceiver op authenticatie, payloadvalidatie en netwerkbeperkingen voordat deze buiten een lokale demo wordt gebruikt.
+- [ ] `environments/local/outputs.tf` references `module.mongodb` and `module.qdrant`, but these modules are not declared in the current `main.tf`, and no corresponding module directories were found in the supplied Terraform directory.
+- [ ] `modules/postgresql/outputs.tf` returns `connection_host` as `mongodb.${var.namespace}.svc.cluster.local`; this does not appear to match the PostgreSQL release/service.
+- [ ] `grafana-stack` uses a `local-exec` PowerShell provisioner to patch an OpenTelemetryCollector. This makes provisioning dependent on PowerShell and on the exact cluster resource being present.
+- [ ] `grafana-stack` generates `.generated/lgtm-otel-metrics-patch.yaml`, while the provisioner uses `otel-metrics-patch.yaml`. Check whether these are intentionally separate files and make the patch source unambiguous.
+- [ ] The local environment calls `grafana-stack`; the separate `alloy` module is not connected. Document which observability variant is authoritative.
+- [ ] `flux_bootstrap_git` is commented out and the FluxCD module is not called from `environments/local`.
+- [ ] `terraform.auto.tfvars` contains example credentials in plaintext. Replace them with secure local values and do not commit real secrets.
+- [ ] The Terraform root does not configure Kafka, Ollama, MongoDB, Qdrant, or the six application services. Document where these components are deployed separately.
+- [ ] Review the Grafana webhook receiver for authentication, payload validation, and network restrictions before using it outside a local demo.
 
-### Aanbevolen vervolgstappen
+### Recommended next steps
 
-1. Herstel de niet-bestaande `mongodb`- en `qdrant`-moduleverwijzingen in outputs, of voeg de bedoelde modules toe.
-2. Corrigeer de PostgreSQL `connection_host` output en test de service-DNS vanuit de applicatienamespace.
-3. Maak de LGTM patchgeneratie en patchuitvoering consistent en idempotent.
-4. Kies één observability-stack als standaard en documenteer de exporter-/OTLP-configuratie voor alle services.
-5. Activeer FluxCD pas nadat GitHub credentials, repository, deploy-key-rechten en Flux bootstrap bewust zijn ingericht.
-6. Verwijder secrets uit tracked tfvars en migreer waar nodig naar een remote, beveiligde Terraform backend.
-7. Voeg `terraform fmt`, `terraform validate`, plan-review en provisioning smoke tests toe aan CI.
-8. Voeg de ontbrekende platformcomponenten alleen toe wanneer hun lifecycle daadwerkelijk door Terraform beheerd moet worden.
+1. Fix the references to the missing `mongodb` and `qdrant` modules in outputs, or add the intended modules.
+2. Correct the PostgreSQL `connection_host` output and test service DNS from the application namespace.
+3. Make LGTM patch generation and patch application consistent and idempotent.
+4. Select one observability stack as the default and document the exporter/OTLP configuration for all services.
+5. Enable FluxCD only after GitHub credentials, repository configuration, deploy-key permissions, and Flux bootstrap have been deliberately configured.
+6. Remove secrets from tracked tfvars and, where appropriate, migrate to a secure remote Terraform backend.
+7. Add `terraform fmt`, `terraform validate`, plan review, and provisioning smoke tests to CI.
+8. Add missing platform components only when their lifecycle is intended to be managed by Terraform.
 
----
+## Design principle
 
-## Ontwerpprincipe
+Infrastructure supports the incident response process, but it does not make operational decisions on behalf of the user:
 
-De infrastructuur ondersteunt het incident response-proces, maar neemt geen operationele beslissingen namens de gebruiker:
+> **AI investigates and advises. Controlled automation executes. A human remains in control.**
 
-> **AI onderzoekt en adviseert. Gecontroleerde automatisering voert uit. Een mens houdt de regie.**
-
-Terraform maakt de onderliggende platformcomponenten reproduceerbaar; de applicatieservices blijven verantwoordelijk voor incidentdetectie, onderzoek, goedkeuring, remediation en audit.
+Terraform makes the underlying platform components reproducible; the application services remain responsible for incident detection, investigation, approval, remediation, and audit.
+'''

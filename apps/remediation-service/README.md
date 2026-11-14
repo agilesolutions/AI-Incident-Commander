@@ -1,12 +1,12 @@
-# remediation-service
+# Remediation Service
 
-De gecontroleerde uitvoeringscomponent van **AI Incident Commander**.
+The controlled execution component of **AI Incident Commander**.
 
-> AI onderzoekt en adviseert. Gecontroleerde automatisering voert uit. Een mens houdt de regie.
+> AI investigates and advises. Controlled automation executes. A human remains in control.
 
-## Rol in de architectuur
+## Role in the architecture
 
-De service ontvangt een `RemediationApproved`-event. Vóór uitvoering controleert hij de goedkeuring, geldigheidsperiode, namespace, actietype, parameters en digest van de exact goedgekeurde actie. Daarna roept hij een begrensde `RemediationExecutor` aan, registreert het resultaat en publiceert events via een database-outbox.
+The service receives a `RemediationApproved` event. Before execution, it validates the approval, expiry period, namespace, action type, parameters, and digest of the exact approved action. It then invokes a bounded `RemediationExecutor`, records the result, and publishes events through a database outbox.
 
 ```mermaid
 flowchart TD
@@ -22,57 +22,57 @@ flowchart TD
   J --> K[Kafka events]
 ```
 
-## Technologie
+## Technology
 
 - Java 25, Spring Boot 4.0.0, Gradle
-- Apache Kafka, Avro en Confluent Schema Registry
-- PostgreSQL, Spring Data JPA en Flyway
-- Actuator, Micrometer en Prometheus
-- Docker, Helm, JUnit 5 en Testcontainers dependencies
+- Apache Kafka, Avro, and Confluent Schema Registry
+- PostgreSQL, Spring Data JPA, and Flyway
+- Actuator, Micrometer, and Prometheus
+- Docker, Helm, JUnit 5, and Testcontainers dependencies
 
-## Kafka-topics
+## Kafka topics
 
-| Richting | Topic | Event |
+| Direction | Topic | Event |
 |---|---|---|
 | In | `incident.remediation.approved.v1` | `RemediationApproved` |
 | In | `incident.remediation.rejected.v1` | `RemediationRejected` |
-| Uit | `incident.remediation.executed.v1` | `RemediationExecuted` |
-| Uit | `incident.remediation.failed.v1` | `RemediationFailed` |
-| Uit | `incident.remediation.verified.v1` | `RemediationVerified` |
+| Out | `incident.remediation.executed.v1` | `RemediationExecuted` |
+| Out | `incident.remediation.failed.v1` | `RemediationFailed` |
+| Out | `incident.remediation.verified.v1` | `RemediationVerified` |
 
-De schema's in `src/main/resources/avro` zijn zelfstandige lokale kopieën. De canonieke contracten horen in `libs/event-contracts/src/main/avro`. Vergelijk en synchroniseer ze vóór monorepo-integratie; de eventvelden in deze module zijn een voorgestelde interface en niet automatisch bewijs dat de bestaande canonieke schema's identiek zijn.
+The schemas in `src/main/resources/avro` are standalone local copies. The canonical contracts belong in `libs/event-contracts/src/main/avro`. Compare and synchronise them before monorepo integration; the event fields in this module are a proposed interface and do not automatically prove that the existing canonical schemas are identical.
 
-## Allowlist en policy
+## Allowlist and policy
 
-Ondersteunde actietypen:
+Supported action types:
 
-- `RESTART_WORKLOAD` — geen parameters
-- `SCALE_WORKLOAD` — replica-aantal 1 t/m 5
-- `ROLLBACK_DEPLOYMENT` — positieve revision
+- `RESTART_WORKLOAD` — no parameters
+- `SCALE_WORKLOAD` — replica count from 1 to 5
+- `ROLLBACK_DEPLOYMENT` — positive revision
 
-Namespaces zijn configureerbaar; standaard `default,demo`. Resource-namen worden gevalideerd. Onbekende actietypen en parameters worden geweigerd.
+Namespaces are configurable; the defaults are `default,demo`. Resource names are validated. Unknown action types and parameters are rejected.
 
 ## Approval digest
 
-De service berekent SHA-256 over `proposalId`, `incidentId`, `actionType`, `resourceId`, `namespace` en parameters (gesorteerd op sleutel). Deze digest moet exact overeenkomen met `approvedActionDigest`. De producer van het approval-event moet dezelfde canonicalisatie implementeren. Leg dit formaat vast als gedeeld contract en test het vanuit Command API.
+The service calculates SHA-256 over `proposalId`, `incidentId`, `actionType`, `resourceId`, `namespace`, and parameters (sorted by key). This digest must exactly match `approvedActionDigest`. The approval-event producer must implement the same canonicalisation. Define this format as a shared contract and test it from Command API.
 
-## Veiligheidsmodel
+## Security model
 
-**Standaard staat `REMEDIATION_EXECUTION_MODE=simulation`.** De meegeleverde `SimulationRemediationExecutor` voert geen clusterwijzigingen uit. Er is bewust geen Kubernetes-client of shell-executor opgenomen.
+**`REMEDIATION_EXECUTION_MODE=simulation` is the default.** The included `SimulationRemediationExecutor` does not make cluster changes. No Kubernetes client or shell executor is intentionally included.
 
-`RemediationExecutor` is een SPI voor een later, afzonderlijk beveiligd uitvoeringsadapter. Een productieadapter moet minimaal:
+`RemediationExecutor` is an SPI for a future, separately secured execution adapter. A production adapter must at a minimum:
 
-- uitsluitend allowlisted handelingen implementeren;
-- een dedicated service account met minimale RBAC gebruiken;
-- namespace- en resource-scoping afdwingen;
-- geen arbitraire commando's, manifests of image-velden accepteren;
-- rate limits, timeouts, audit logging en een kill switch ondersteunen.
+- Implement only allowlisted operations.
+- Use a dedicated service account with minimal RBAC permissions.
+- Enforce namespace and resource scoping.
+- Reject arbitrary commands, manifests, or image fields.
+- Support rate limits, timeouts, audit logging, and a kill switch.
 
-Verificatie staat standaard op `manual`. De service publiceert dan `UNVERIFIED`; dit is nadrukkelijk geen succesmelding. Voeg automatische verificatie pas toe na integratie met betrouwbare read-only observability-data.
+Verification defaults to `manual`. In this mode, the service publishes `UNVERIFIED`; this is explicitly not a success indication. Add automatic verification only after integration with reliable read-only observability data.
 
-## Lokaal bouwen en starten
+## Build and run locally
 
-Vereist Java 25, Gradle, PostgreSQL, Kafka en Schema Registry.
+Requires Java 25, Gradle, PostgreSQL, Kafka, and Schema Registry.
 
 ```bash
 gradle clean test
@@ -80,7 +80,7 @@ gradle bootJar
 docker build -t remediation-service:local .
 ```
 
-Belangrijke variabelen:
+Important variables:
 
 - `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
 - `SPRING_KAFKA_BOOTSTRAP_SERVERS`, `SCHEMA_REGISTRY_URL`
@@ -90,14 +90,14 @@ Belangrijke variabelen:
 
 ## REST API
 
-- `GET /api/v1/remediations` — laatste 100 uitvoeringsrecords
-- `GET /api/v1/remediations/{proposalId}` — detail van één voorstel
+- `GET /api/v1/remediations` — latest 100 execution records
+- `GET /api/v1/remediations/{proposalId}` — details for a proposal
 
-Er is bewust geen REST-endpoint om een actie uit te voeren of goed te keuren. Uitvoering start uitsluitend via een goedgekeurd Kafka-event.
+There is intentionally no REST endpoint for executing or approving an action. Execution starts only through an approved Kafka event.
 
 ## Kubernetes
 
-Maak vooraf de Secret `remediation-service-secrets` met key `datasource-password`.
+Create the `remediation-service-secrets` Secret beforehand with the `datasource-password` key.
 
 ```bash
 helm upgrade --install remediation-service ./deploy/helm/remediation-service
@@ -105,16 +105,16 @@ helm upgrade --install remediation-service ./deploy/helm/remediation-service
 
 ## Tests
 
-Unit tests dekken digest-stabiliteit, wijzigingen aan parameters, allowlist, namespace-policy, schaalgrenzen en verlopen goedkeuringen. Volledige integratietests met Kafka en PostgreSQL moeten nog worden toegevoegd.
+Unit tests cover digest stability, parameter changes, allowlists, namespace policy, scaling limits, and expired approvals. Full integration tests with Kafka and PostgreSQL still need to be added.
 
-## Productie-aandachtspunten
+## Production considerations
 
-1. Stem event-schema's exact af op `libs/event-contracts`.
-2. Voeg authenticatie en autorisatie toe aan read-only REST-endpoints.
-3. Voeg outbox-claiming/locking toe voor meerdere replicas; huidige publisher is bedoeld voor één replica.
-4. Voeg retry/backoff, poison-message-afhandeling en DLQ toe.
-5. Maak idempotency en exactly-once-effecten ook in de uitvoeringsadapter hard.
-6. Implementeer een onafhankelijke read-only verifier.
-7. Bouw en test de monorepo-integratie voordat echte clusterrechten worden toegekend.
+1. Align event schemas exactly with `libs/event-contracts`.
+2. Add authentication and authorisation to the read-only REST endpoints.
+3. Add outbox claiming/locking for multiple replicas; the current publisher is intended for a single replica.
+4. Add retry/backoff, poison-message handling, and a DLQ.
+5. Enforce idempotency and exactly-once effects in the execution adapter as well.
+6. Implement an independent read-only verifier.
+7. Build and test monorepo integration before granting real cluster permissions.
 
-**Belangrijk:** deze codebase draait standaard veilig in simulatiemodus. Geef geen productieclusterrechten voordat uitvoeringsadapter, RBAC, schema's, approval digest en integratietests onafhankelijk zijn beoordeeld.
+**Important:** this codebase runs safely in simulation mode by default. Do not grant production cluster permissions until the execution adapter, RBAC, schemas, approval digest, and integration tests have been independently reviewed.

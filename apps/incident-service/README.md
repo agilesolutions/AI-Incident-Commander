@@ -1,14 +1,14 @@
-# incident-service
+# Incident Service
 
-**Incident lifecycle, persistente opslag en bewijsbeheer** voor het AI Incident Commander-platform.
+**Incident lifecycle management, persistent storage, and evidence management** for the AI Incident Commander platform.
 
-> AI onderzoekt en adviseert. Gecontroleerde automatisering voert uit. Een mens houdt de regie.
+> AI investigates and advises. Controlled automation executes. A human remains in control.
 
-## Verantwoordelijkheid
+## Responsibilities
 
-De service ontvangt `IncidentDetected` vanuit `signal-correlator`, bewaart incidenten en bewijsreferenties in PostgreSQL, publiceert lifecycle-events en start een onderzoek door `InvestigationRequested` te publiceren. De REST API biedt incidentoverzicht, detail, bewijs, een expliciete onderzoeksaanvraag en gecontroleerde statusovergangen.
+The service receives `IncidentDetected` from `signal-correlator`, stores incidents and evidence references in PostgreSQL, publishes lifecycle events, and starts an investigation by publishing `InvestigationRequested`. The REST API provides incident listing, details, evidence, an explicit investigation request, and controlled status transitions.
 
-## Architectuur
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -24,70 +24,70 @@ flowchart LR
   I[Investigation Agent] -. consumes request .-> B
 ```
 
-## Technologie
+## Technology
 
 - Java 25, Spring Boot 4.0.0, Gradle
-- Spring Kafka, Apache Avro en Confluent Schema Registry
-- PostgreSQL, Spring Data JPA en Flyway
+- Spring Kafka, Apache Avro, and Confluent Schema Registry
+- PostgreSQL, Spring Data JPA, and Flyway
 - Actuator, Micrometer Prometheus
-- JUnit 5, Spring Kafka Test en Testcontainers dependencies
-- Docker en Helm
+- JUnit 5, Spring Kafka Test, and Testcontainers dependencies
+- Docker and Helm
 
-## Kafka-contracten
+## Kafka contracts
 
-| Richting | Topic | Contract |
+| Direction | Topic | Contract |
 |---|---|---|
 | In | `incident.detected.v1` | `IncidentDetected` |
-| Uit | `incident.updated.v1` | `IncidentUpdated` |
-| Uit | `incident.investigation.requested.v1` | `InvestigationRequested` |
+| Out | `incident.updated.v1` | `IncidentUpdated` |
+| Out | `incident.investigation.requested.v1` | `InvestigationRequested` |
 
-De schema's in `src/main/resources/avro` zijn kopieën voor zelfstandig bouwen. De canonieke bron blijft `libs/event-contracts/src/main/avro` in de monorepo. Houd deze bestanden synchroon of vervang ze later door een gedeelde contract-artifact.
+The schemas in `src/main/resources/avro` are copies used for standalone builds. The canonical source in the monorepo remains `libs/event-contracts/src/main/avro`. Keep these files synchronised or replace them later with a shared contract artifact.
 
 ## REST API
 
-| Methode | Endpoint | Doel |
+| Method | Endpoint | Purpose |
 |---|---|---|
-| GET | `/api/v1/incidents` | Incidenten opvragen; optioneel `?status=NEW` |
-| GET | `/api/v1/incidents/{id}` | Incidentdetail |
-| GET | `/api/v1/incidents/{id}/evidence` | Bewijsreferenties |
-| POST | `/api/v1/incidents/{id}/investigations` | Onderzoek aanvragen |
-| PATCH | `/api/v1/incidents/{id}/status` | Statusovergang uitvoeren |
+| GET | `/api/v1/incidents` | List incidents; optionally use `?status=NEW` |
+| GET | `/api/v1/incidents/{id}` | Incident details |
+| GET | `/api/v1/incidents/{id}/evidence` | Evidence references |
+| POST | `/api/v1/incidents/{id}/investigations` | Request an investigation |
+| PATCH | `/api/v1/incidents/{id}/status` | Apply a status transition |
 
-Voorbeeld onderzoeksaanvraag:
+Example investigation request:
 
 ```http
 POST /api/v1/incidents/{incidentId}/investigations
 Content-Type: application/json
 
-{"objective":"Onderzoek de oorzaak van de verhoogde 5xx-foutpercentages."}
+{"objective":"Investigate the cause of the increased 5xx error rates."}
 ```
 
-Voorbeeld statuswijziging:
+Example status change:
 
 ```http
 PATCH /api/v1/incidents/{incidentId}/status
 Content-Type: application/json
 
-{"status":"INVESTIGATING","summary":"Onderzoek gestart door investigation-agent"}
+{"status":"INVESTIGATING","summary":"Investigation started by investigation-agent"}
 ```
 
-De statusovergangen worden door het domeinmodel gevalideerd. Een `CLOSED` incident kan niet opnieuw worden geopend. Deze API is een interne service-API; authenticatie/autorisatie moet via de platformbeveiliging/API-gateway worden toegevoegd voordat deze extern beschikbaar wordt gemaakt.
+Status transitions are validated by the domain model. A `CLOSED` incident cannot be reopened. This is an internal service API; authentication and authorisation must be added through platform security/API gateway controls before external exposure.
 
-## Betrouwbaarheid en veiligheid
+## Reliability and security
 
-- `processed_events` dedupliceert inkomende event-ID's.
-- `incident_id` is de primaire sleutel; een tweede detectie voor hetzelfde incident maakt geen duplicaat.
-- Incident, bewijs, inbox en outbox worden in dezelfde databasetransactie opgeslagen.
-- Outbox-publicatie voorkomt dat een databasecommit en Kafka-publicatie los van elkaar verloren gaan.
-- Outbox-publicatie is **at-least-once**: een crash na Kafka-ack maar vóór `published_at` kan een event opnieuw publiceren. Consumenten moeten daarom idempotent zijn.
-- De service voert geen Kubernetes- of remediation-acties uit.
-- Statusovergangen zijn expliciet toegestaan; een willekeurige statuswijziging wordt geweigerd.
+- `processed_events` deduplicates incoming event IDs.
+- `incident_id` is the primary key; a second detection for the same incident does not create a duplicate.
+- Incident, evidence, inbox, and outbox records are stored in the same database transaction.
+- Outbox publishing prevents a database commit and Kafka publication from being lost independently.
+- Outbox publishing is **at-least-once**: a crash after Kafka acknowledgement but before `published_at` may cause an event to be published again. Consumers must therefore be idempotent.
+- The service does not perform Kubernetes or remediation actions.
+- Only explicitly permitted status transitions are accepted; arbitrary status changes are rejected.
 
-## Configuratie
+## Configuration
 
-Belangrijkste environment variables:
+Main environment variables:
 
-| Variabele | Default |
+| Variable | Default |
 |---|---|
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5432/incidentdb` |
 | `SPRING_DATASOURCE_USERNAME` | `incident` |
@@ -99,9 +99,9 @@ Belangrijkste environment variables:
 | `INVESTIGATION_REQUESTED_TOPIC` | `incident.investigation.requested.v1` |
 | `OUTBOX_POLL_DELAY_MS` | `1000` |
 
-## Lokaal bouwen
+## Build locally
 
-Vereist Java 25 en Gradle:
+Requires Java 25 and Gradle:
 
 ```bash
 gradle clean test
@@ -109,7 +109,7 @@ gradle bootJar
 docker build -t incident-service:local .
 ```
 
-Start daarnaast PostgreSQL, Kafka en Schema Registry. De database moet bestaan en de topics moeten beschikbaar zijn.
+Also start PostgreSQL, Kafka, and Schema Registry. The database must exist and the topics must be available.
 
 ## Kubernetes
 
@@ -119,21 +119,21 @@ helm upgrade --install incident-service ./deploy/helm/incident-service \
   --set image.tag=local
 ```
 
-Maak vooraf de Kubernetes Secret aan die in `values.yaml` is opgegeven.
+Create the Kubernetes Secret specified in `values.yaml` beforehand.
 
 ## Tests
 
-De code bevat unit-tests voor toegestane en verboden lifecycle-overgangen en een MVC-validatietest. Testcontainers-dependencies zijn opgenomen; volledige Kafka/PostgreSQL end-to-end-tests en concurrency-tests moeten nog worden toegevoegd.
+The code includes unit tests for permitted and forbidden lifecycle transitions and an MVC validation test. Testcontainers dependencies are included; full Kafka/PostgreSQL end-to-end tests and concurrency tests still need to be added.
 
-## Bekende implementatiegrenzen
+## Known implementation boundaries
 
-- Er is nog geen authenticatie/autorisatie in deze module zelf.
-- De REST-lijst is bewust eenvoudig en nog niet gepagineerd.
-- De outbox-publisher is een eerste werkbare implementatie; bij meerdere replicas is een claim/locking-strategie nodig om gelijktijdige verwerking te beperken.
-- Retry-backoff, maximale retry-policy en dead-letter-afhandeling voor poison messages moeten in de deploymentconfiguratie worden afgemaakt.
-- De listener verwerkt alleen `IncidentDetected`; resultaten van de investigation-agent worden via een volgende integratiestap gekoppeld.
-- Schema's zijn lokaal gekopieerd en moeten bij contractwijzigingen synchroon blijven.
+- Authentication/authorisation is not yet implemented in this module.
+- The REST list endpoint is intentionally simple and is not yet paginated.
+- The outbox publisher is an initial implementation; with multiple replicas, a claiming/locking strategy is required to limit concurrent processing.
+- Retry backoff, maximum retry policy, and dead-letter handling for poison messages still need to be completed in the deployment configuration.
+- The listener processes only `IncidentDetected`; investigation-agent results will be integrated in a subsequent step.
+- Schemas are copied locally and must remain synchronised when contracts change.
 
-## Monorepo-integratie
+## Monorepo integration
 
-Plaats de module onder `apps/incident-service`. De huidige build is standalone en gebruikt lokale schema-resourcebestanden. De monorepo kan later de gedeelde `libs/event-contracts` als Gradle-project dependency toevoegen.
+Place the module under `apps/incident-service`. The current build is standalone and uses local schema resource files. The monorepo can later add the shared `libs/event-contracts` as a Gradle project dependency.

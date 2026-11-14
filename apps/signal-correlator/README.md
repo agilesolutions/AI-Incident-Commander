@@ -1,12 +1,12 @@
 # Signal Correlator
 
-## Doel
+## Purpose
 
-`signal-correlator` consumeert synthetische en operationele telemetrie-events van Kafka, correleert foutsignalen deterministisch en publiceert een `IncidentDetected`-event wanneer een configureerbare drempel wordt bereikt.
+`signal-correlator` consumes synthetic and operational telemetry events from Kafka, correlates error signals deterministically, and publishes an `IncidentDetected` event when a configurable threshold is reached.
 
-De service voert geen AI-analyse uit en neemt geen herstelmaatregelen. Detectie is deterministisch en uitlegbaar; onderzoek en remediation vinden plaats in de volgende componenten.
+The service does not perform AI analysis and does not take remediation actions. Detection is deterministic and explainable; investigation and remediation take place in subsequent components.
 
-## Eventflow
+## Event flow
 
 ```text
 chaos-simulator
@@ -26,61 +26,61 @@ incident.detected.v1
 incident-service
 ```
 
-## Detectieregels
+## Detection rules
 
-- Alleen `ERROR`- en `CRITICAL`-telemetrie telt mee voor de huidige detector.
-- Signalen worden gegroepeerd op `environment + resourceId`.
-- De detector gebruikt een configureerbaar tijdvenster (`window-seconds`).
-- Bij minimaal `threshold` signalen binnen het venster wordt een incident-event gepubliceerd.
-- Het incident krijgt `CRITICAL` wanneer ten minste één bewijs-event `CRITICAL` is; anders `HIGH`.
-- `eventId` wordt gebruikt voor in-memory deduplicatie.
-- Na detectie voorkomt een deduplicatievenster herhaald publiceren voor dezelfde resource.
-- `evidenceEventIds`, `correlationId` en `causationId` worden opgenomen in het incident-event.
+- Only `ERROR` and `CRITICAL` telemetry is counted by the current detector.
+- Signals are grouped by `environment + resourceId`.
+- The detector uses a configurable time window (`window-seconds`).
+- An incident event is published when at least `threshold` signals occur within the window.
+- The incident is assigned `CRITICAL` if at least one evidence event is `CRITICAL`; otherwise it is assigned `HIGH`.
+- `eventId` is used for in-memory deduplication.
+- After detection, a deduplication window prevents repeated publishing for the same resource.
+- `evidenceEventIds`, `correlationId`, and `causationId` are included in the incident event.
 
-Dit is een eerste deterministische baseline, geen geavanceerde anomaliedetectie. Drempels moeten per type workload worden gekalibreerd.
+This is an initial deterministic baseline, not advanced anomaly detection. Thresholds must be calibrated for each workload type.
 
-## Contracten
+## Contracts
 
-De service gebruikt de Avro-contracten uit `libs/event-contracts`:
+The service uses the Avro contracts from `libs/event-contracts`:
 
-- `TelemetryEvent` op `incident.telemetry.v1`
-- `IncidentDetected` op `incident.detected.v1`
+- `TelemetryEvent` on `incident.telemetry.v1`
+- `IncidentDetected` on `incident.detected.v1`
 
-De ZIP bevat lokale kopieën van de twee `.avsc`-bestanden als runtime-resources, zodat deze module zelfstandig kan worden gebouwd. In de monorepo blijven de schema's in `libs/event-contracts/src/main/avro` de canonieke bron. Houd de kopieën synchroon of vervang deze runtime-resources bij integratie door een gedeelde schema-artifact.
+The ZIP contains local copies of the two `.avsc` files as runtime resources so this module can be built independently. In the monorepo, the schemas in `libs/event-contracts/src/main/avro` remain the canonical source. Keep the copies synchronised or replace these runtime resources during integration with a shared schema artifact.
 
-Schema Registry wordt gebruikt via Confluent Avro Serializer/Deserializer. Auto-registration staat in deze baseline aan in de producerconfiguratie; voor productie verdient gecontroleerde schema-publicatie in CI de voorkeur.
+Schema Registry is used through the Confluent Avro Serializer/Deserializer. Auto-registration is enabled in the producer configuration in this baseline; controlled schema publication in CI is preferable for production.
 
-## Configuratie
+## Configuration
 
-| Variabele | Standaard | Beschrijving |
+| Variable | Default | Description |
 |---|---|---|
-| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Kafka bootstrapservers |
+| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Kafka bootstrap servers |
 | `SCHEMA_REGISTRY_URL` | `http://localhost:8081` | Schema Registry URL |
 | `KAFKA_CONSUMER_GROUP` | `signal-correlator` | Consumer group |
-| `CORRELATOR_INPUT_TOPIC` | `incident.telemetry.v1` | Inputtopic |
-| `CORRELATOR_OUTPUT_TOPIC` | `incident.detected.v1` | Outputtopic |
-| `CORRELATOR_DETECTOR_ID` | `signal-correlator-v1` | Detectoridentificatie |
-| `CORRELATOR_THRESHOLD` | `3` | Aantal foutsignalen voor detectie |
-| `CORRELATOR_WINDOW_SECONDS` | `120` | Correlatievenster in seconden |
-| `CORRELATOR_DEDUP_TTL_SECONDS` | `900` | Tijd waarin herhaalde detectie wordt onderdrukt |
-| `CORRELATOR_ENVIRONMENT` | leeg | Optioneel filter op environment |
-| `SERVER_PORT` | `8080` | Actuator HTTP-poort |
+| `CORRELATOR_INPUT_TOPIC` | `incident.telemetry.v1` | Input topic |
+| `CORRELATOR_OUTPUT_TOPIC` | `incident.detected.v1` | Output topic |
+| `CORRELATOR_DETECTOR_ID` | `signal-correlator-v1` | Detector identifier |
+| `CORRELATOR_THRESHOLD` | `3` | Number of error signals required for detection |
+| `CORRELATOR_WINDOW_SECONDS` | `120` | Correlation window in seconds |
+| `CORRELATOR_DEDUP_TTL_SECONDS` | `900` | Period during which repeated detection is suppressed |
+| `CORRELATOR_ENVIRONMENT` | empty | Optional environment filter |
+| `SERVER_PORT` | `8080` | Actuator HTTP port |
 
-## Bouwen en testen
+## Build and test
 
-Vereist: JDK 25 en Gradle 9.x of een compatibele Gradle-installatie.
+Requires JDK 25 and Gradle 9.x or a compatible Gradle installation.
 
 ```bash
 gradle clean test
 ```
 
-Start de service:
+Start the service:
 
 ```bash
 gradle bootRun
 ```
 
-De applicatie verwacht dat Kafka en Schema Registry bereikbaar zijn. De health endpoints zijn beschikbaar via `/actuator/health`; Prometheus-metrics via `/actuator/prometheus`.
+The application expects Kafka and Schema Registry to be reachable. Health endpoints are available at `/actuator/health`; Prometheus metrics are available at `/actuator/prometheus`.
 
 ## Metrics
 
@@ -93,23 +93,23 @@ De applicatie verwacht dat Kafka en Schema Registry bereikbaar zijn. De health e
 
 ## Kubernetes
 
-Een Helm-chart staat onder `deploy/helm/signal-correlator`.
+A Helm chart is available under `deploy/helm/signal-correlator`.
 
 ```bash
 helm upgrade --install signal-correlator deploy/helm/signal-correlator \
   --namespace incident-platform --create-namespace
 ```
 
-Pas de Kafka- en Schema Registry-adressen aan op de infrastructuur van de omgeving.
+Adjust the Kafka and Schema Registry addresses to match the infrastructure in your environment.
 
-## Betrouwbaarheid en bekende beperkingen
+## Reliability and known limitations
 
-**Belangrijk:** de correlatievensters, deduplicatie en actieve incident-sleutels worden momenteel alleen in geheugen bijgehouden. Bij een restart gaat deze state verloren. Meerdere replicas kunnen daardoor dezelfde incidenten onafhankelijk detecteren. Gebruik voor productie een gedeelde state store of Kafka Streams met state stores/changelog-topics, en maak de downstream `incident-service` idempotent.
+**Important:** correlation windows, deduplication, and active incident keys are currently held in memory only. This state is lost on restart. Multiple replicas may therefore detect the same incidents independently. For production, use a shared state store or Kafka Streams with state stores/changelog topics, and make the downstream `incident-service` idempotent.
 
-De listener gebruikt handmatige record-acknowledgement via Spring Kafka's `RECORD`-ack-mode en werpt verwerkingsfouten opnieuw op. Een expliciete retry/DLQ-topologie, poison-messagebeleid en transactionele consume-transform-produce-flow moeten nog worden ingericht voor productie.
+The listener uses manual record acknowledgement through Spring Kafka's `RECORD` ack mode and rethrows processing errors. An explicit retry/DLQ topology, poison-message policy, and transactional consume-transform-produce flow still need to be configured for production.
 
-De huidige detector telt alle ERROR/CRITICAL signalen voor een resource samen, ongeacht `signalType`. Een volgende iteratie kan regels per signaaltype, gewogen ernst, recovery/reset-signalen en configureerbare detectorprofielen toevoegen.
+The current detector counts all ERROR/CRITICAL signals for a resource together, regardless of `signalType`. A future iteration could add rules per signal type, weighted severity, recovery/reset signals, and configurable detector profiles.
 
-## Veiligheidsgrens
+## Security boundary
 
-Deze service detecteert en publiceert incidenten. Zij heeft geen Kubernetes-client, cluster write-permissions, remediation credentials of AI-agent. Een gedetecteerd incident is geen toestemming om een herstelactie uit te voeren.
+This service detects and publishes incidents. It has no Kubernetes client, cluster write permissions, remediation credentials, or AI agent. A detected incident is not authorisation to execute a remediation action.

@@ -1,23 +1,23 @@
 # Chaos Simulator
 
-De `chaos-simulator` is een Spring Boot-service voor AI Incident Commander die **synthetische telemetrie-events** genereert en naar Kafka publiceert. De events zijn bedoeld om de event-driven incidentketen te demonstreren en te testen.
+`chaos-simulator` is a Spring Boot service for AI Incident Commander. It generates **synthetic telemetry events** and publishes them to Kafka. These events are used to demonstrate and test the event-driven incident-response flow.
 
-> Veiligheidsgrens: deze applicatie simuleert signalen. Ze stopt geen containers, verwijdert geen pods en voert geen echte infrastructuur- of deploymentwijzigingen uit.
+> Safety boundary: this application simulates signals. It does not stop containers, delete pods, or make real infrastructure or deployment changes.
 
-## Technologie
+## Technology
 
 - Java 25
 - Spring Boot 4.0.0
 - Gradle
 - Apache Kafka / Redpanda
-- Apache Avro en Confluent Schema Registry serializer
-- Springdoc/OpenAPI-annotaties
-- JUnit 5, Mockito en Spring MVC-testondersteuning
-- Docker en Helm
+- Apache Avro and Confluent Schema Registry serializer
+- Springdoc/OpenAPI annotations
+- JUnit 5, Mockito, and Spring MVC test support
+- Docker and Helm
 
-## Scenario's
+## Scenarios
 
-| Scenario | Gesimuleerd signaal | Voorbeeldwaarde |
+| Scenario | Simulated signal | Example value |
 |---|---|---:|
 | `HIGH_ERROR_RATE` | `HTTP_ERROR_RATE` | 18.5 % |
 | `HIGH_LATENCY` | `HTTP_LATENCY` | 2400 ms |
@@ -27,9 +27,9 @@ De `chaos-simulator` is een Spring Boot-service voor AI Incident Commander die *
 
 ## API
 
-`POST /api/v1/chaos/scenarios` accepteert een scenario en publiceert een Avro `TelemetryEvent` op topic `incident.telemetry.v1`.
+`POST /api/v1/chaos/scenarios` accepts a scenario and publishes an Avro `TelemetryEvent` to topic `incident.telemetry.v1`.
 
-Voorbeeld:
+Example:
 
 ```bash
 curl -X POST http://localhost:8081/api/v1/chaos/scenarios \
@@ -37,26 +37,26 @@ curl -X POST http://localhost:8081/api/v1/chaos/scenarios \
   -d '{"scenario":"HIGH_ERROR_RATE","resourceId":"checkout-service","environment":"demo","serviceName":"checkout-service"}'
 ```
 
-Mogelijke scenario's zijn de enumwaarden uit `ScenarioType`. `resourceId`, `environment` en `serviceName` hebben standaardwaarden wanneer ze ontbreken.
+Available scenarios are the enum values defined in `ScenarioType`. Default values are used for `resourceId`, `environment`, and `serviceName` when they are omitted.
 
-De API geeft HTTP 202 terug met een `runId`, scenario, resource en status `SUBMITTED`. Dit betekent dat de aanvraag is geaccepteerd en dat de publicatie is gestart; controleer de applicatielogs voor eventuele Kafka-publicatiefouten.
+The API returns HTTP 202 with a `runId`, scenario, resource, and `SUBMITTED` status. This means the request has been accepted and publishing has started; check the application logs for any Kafka publishing errors.
 
-## Lokaal starten
+## Run locally
 
-Vereisten: JDK 25, Gradle en een bereikbare Kafka/Redpanda-broker met Schema Registry.
+Prerequisites: JDK 25, Gradle, and a reachable Kafka/Redpanda broker with Schema Registry.
 
 ```bash
 gradle test
 gradle bootRun
 ```
 
-Standaard verwacht de applicatie:
+By default, the application expects:
 
 - Kafka: `localhost:9092`
 - Schema Registry: `http://localhost:8081`
 - API: `http://localhost:8080`
 
-Voorbeeld omgevingsvariabelen:
+Example environment variables:
 
 ```bash
 export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
@@ -65,31 +65,31 @@ export SIMULATOR_ENABLED=false
 gradle bootRun
 ```
 
-`SIMULATOR_ENABLED` staat standaard op `false`. Zet deze alleen op `true` als je periodiek automatisch synthetische foutpercentage-events wilt publiceren. De interval wordt ingesteld met `SIMULATOR_INTERVAL_MS`.
+`SIMULATOR_ENABLED` defaults to `false`. Set it to `true` only when you want periodic synthetic error-rate events to be published automatically. The interval is configured through `SIMULATOR_INTERVAL_MS`.
 
-## Avro en Schema Registry
+## Avro and Schema Registry
 
-Het schema `src/main/resources/avro/telemetry-event.avsc` is overgenomen uit de gedeelde event-contracten. De publisher bouwt een Avro `GenericRecord` en gebruikt `KafkaAvroSerializer`. De topicnaam is configureerbaar met `SIMULATOR_TOPIC` en standaard `incident.telemetry.v1`.
+The schema at `src/main/resources/avro/telemetry-event.avsc` is copied from the shared event contracts. The publisher builds an Avro `GenericRecord` and uses `KafkaAvroSerializer`. The topic name is configurable through `SIMULATOR_TOPIC` and defaults to `incident.telemetry.v1`.
 
-Voor de Schema Registry moet de value-subjectcompatibiliteit aansluiten op de contracten van de rest van het platform. In een ontwikkelomgeving kan `SCHEMA_REGISTRY_AUTO_REGISTER=true` worden gebruikt; in een gecontroleerde productieomgeving is het beter schema's vooraf te registreren en automatische registratie uit te schakelen.
+Schema Registry value-subject compatibility must align with the contracts used by the rest of the platform. In a development environment, `SCHEMA_REGISTRY_AUTO_REGISTER=true` can be used. In a controlled production environment, it is preferable to register schemas in advance and disable automatic registration.
 
-## Configuratie
+## Configuration
 
-| Variabele | Standaard | Betekenis |
+| Variable | Default | Description |
 |---|---|---|
-| `SERVER_PORT` | `8081` | HTTP-poort |
+| `SERVER_PORT` | `8081` | HTTP port |
 | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Kafka bootstrap servers |
 | `SCHEMA_REGISTRY_URL` | `http://localhost:8081` | Schema Registry URL |
-| `SCHEMA_REGISTRY_AUTO_REGISTER` | `true` | Automatische schemaregistratie |
-| `SIMULATOR_ENABLED` | `false` | Periodieke scenario's inschakelen |
-| `SIMULATOR_INTERVAL_MS` | `30000` | Interval voor periodieke publicatie |
-| `SIMULATOR_SOURCE` | `chaos-simulator` | Eventbron |
-| `SIMULATOR_ENVIRONMENT` | `demo` | Standaardomgeving |
-| `SIMULATOR_TOPIC` | `incident.telemetry.v1` | Kafka-topic |
+| `SCHEMA_REGISTRY_AUTO_REGISTER` | `true` | Automatic schema registration |
+| `SIMULATOR_ENABLED` | `false` | Enable periodic scenarios |
+| `SIMULATOR_INTERVAL_MS` | `30000` | Periodic publishing interval |
+| `SIMULATOR_SOURCE` | `chaos-simulator` | Event source |
+| `SIMULATOR_ENVIRONMENT` | `demo` | Default environment |
+| `SIMULATOR_TOPIC` | `incident.telemetry.v1` | Kafka topic |
 
 ## Observability
 
-Actuator-endpoints:
+Actuator endpoints:
 
 - `GET /actuator/health`
 - `GET /actuator/health/liveness`
@@ -97,16 +97,16 @@ Actuator-endpoints:
 - `GET /actuator/metrics`
 - `GET /actuator/prometheus`
 
-## Docker en Helm
+## Docker and Helm
 
-Bouw de applicatie en container:
+Build the application and container:
 
 ```bash
 gradle clean bootJar
 docker build -t chaos-simulator:0.1.0 .
 ```
 
-Deploy met Helm vanuit de modulemap:
+Deploy with Helm from the module directory:
 
 ```bash
 helm upgrade --install chaos-simulator deploy/helm/chaos-simulator \
@@ -114,7 +114,7 @@ helm upgrade --install chaos-simulator deploy/helm/chaos-simulator \
   --set image.tag=0.1.0
 ```
 
-Controleer de broker- en Schema Registry-adressen voor jouw Kubernetes-namespace voordat je deployt. Het standaard `schemaRegistryUrl` in `values.yaml` is een voorbeeld en moet worden aangepast aan de gekozen Redpanda/Kafka-installatie.
+Check the broker and Schema Registry addresses for your Kubernetes namespace before deploying. The default `schemaRegistryUrl` in `values.yaml` is an example and must be adjusted to match the selected Redpanda/Kafka installation.
 
 ## Tests
 
@@ -122,4 +122,4 @@ Controleer de broker- en Schema Registry-adressen voor jouw Kubernetes-namespace
 gradle test
 ```
 
-De tests dekken de scenario-aanvraag, standaardwaarden, de HTTP 202-response en validatie. Dit pakket is gegenereerd maar is nog niet lokaal gebouwd of uitgevoerd in deze omgeving; voer de tests uit met JDK 25 en valideer de gebruikte Spring Boot-, Kafka- en Confluent-dependencyversies in jouw buildomgeving.
+The tests cover scenario requests, defaults, the HTTP 202 response, and validation. This package has been generated but has not yet been built or executed locally in this environment; run the tests with JDK 25 and validate the Spring Boot, Kafka, and Confluent dependency versions in your build environment.
